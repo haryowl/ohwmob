@@ -1,0 +1,3936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OHW Parser - Unified Mobile Interface</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.3em;
+            margin-bottom: 5px;
+            font-weight: 300;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 0.8em;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 8px;
+            text-align: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            color: #6c757d;
+            transition: all 0.3s ease;
+            font-size: 0.85em;
+        }
+
+        .nav-tab.active {
+            background: #007bff;
+            color: white;
+        }
+
+        .nav-tab:hover {
+            background: #e9ecef;
+        }
+
+        .nav-tab.active:hover {
+            background: #0056b3;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 15px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .status-bar {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            font-size: 0.85em;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: #28a745;
+        }
+
+        .status-dot.disconnected {
+            background: #dc3545;
+        }
+
+        .status-dot.error {
+            background: #dc3545;
+        }
+
+        .status-dot.warning {
+            background: #ffc107;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.8em;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #1e7e34;
+            transform: translateY(-2px);
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .panel {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #e9ecef;
+            margin-bottom: 15px;
+        }
+
+        .panel h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 8px;
+        }
+
+        .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+
+        .section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+
+        .data-grid {
+            display: grid;
+            gap: 10px;
+        }
+
+        .data-item {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 3px solid #007bff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .data-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 3px;
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .data-value {
+            font-size: 0.95em;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+            padding: 20px;
+            font-size: 0.9em;
+        }
+
+        .map-container {
+            position: relative;
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #e9ecef;
+            margin-bottom: 15px;
+        }
+
+        .map-container h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 8px;
+        }
+
+        #map, #trackingMap {
+            width: 100%;
+            height: 400px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #007bff;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .device-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .quick-commands {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+
+        .output-controls {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .output-controls label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9em;
+        }
+
+        .output-controls input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 0.75em;
+        }
+
+        .device-item {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .device-item.connected {
+            border-left: 4px solid #28a745;
+        }
+
+        .device-item.disconnected {
+            border-left: 4px solid #dc3545;
+        }
+
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.8em;
+            margin-top: 10px;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+
+        .log-entry.info { color: #667eea; }
+        .log-entry.success { color: #28a745; }
+        .log-entry.error { color: #dc3545; }
+        .log-entry.warning { color: #ffc107; }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+            border-radius: 8px;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .data-table {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+        }
+
+        .data-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .data-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.85em;
+        }
+
+        .data-table td {
+            font-size: 0.9em;
+            color: #2c3e50;
+        }
+
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .export-options {
+            display: grid;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .option-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .option-group label {
+            font-weight: 500;
+            color: #2c3e50;
+            font-size: 0.9em;
+        }
+
+        .form-control {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: #138496;
+            transform: translateY(-2px);
+        }
+
+        .map-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .map-controls select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9em;
+            background: white;
+        }
+
+        .offline-map-info {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 15px;
+            font-size: 0.85em;
+            color: #1976d2;
+        }
+
+        .offline-map-info strong {
+            color: #0d47a1;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 5px;
+            }
+            
+            .header {
+                padding: 12px;
+            }
+            
+            .header h1 {
+                font-size: 1.2em;
+            }
+            
+            .nav-tab {
+                padding: 10px 6px;
+                font-size: 0.8em;
+                min-width: 100px;
+            }
+            
+            #map, #trackingMap {
+                height: 300px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 OHW Parser - Unified Mobile Interface</h1>
+            <p>Real-time Tracking • Peer Sync • Data Management</p>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('tracking')">📍 Tracking</button>
+            <button class="nav-tab" onclick="showTab('tracking-history')">📈 Tracking History</button>
+            <button class="nav-tab" onclick="showTab('data-export')">📤 Data Export</button>
+            <button class="nav-tab" onclick="showTab('data-sm')">📊 Data SM</button>
+            <button class="nav-tab" onclick="showTab('sm-export')">📋 SM EXPORT</button>
+            <button class="nav-tab" onclick="showTab('device-management')">📱 Device Management</button>
+            <button class="nav-tab" onclick="showTab('peer-sync')">🔄 Peer Sync</button>
+            <button class="nav-tab" onclick="showTab('data-management')">📊 Data Management</button>
+            <button class="nav-tab" onclick="showTab('device-commands')">🎮 Device Commands</button>
+        </div>
+
+        <!-- Tracking Tab -->
+        <div id="tracking" class="tab-content active">
+            <div class="status-bar">
+                <div class="status-indicator">
+                    <div class="status-dot disconnected" id="statusDot"></div>
+                    <span id="statusText">Disconnected</span>
+                </div>
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="connectSocket()">Connect</button>
+                    <button class="btn btn-warning" onclick="clearData()">Clear Data</button>
+                    <button class="btn btn-success" onclick="downloadData()">Download CSV</button>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>Current Data</h3>
+                <div id="currentData" class="data-grid">
+                    <div class="no-data">No data available. Connect to start receiving data.</div>
+                </div>
+            </div>
+
+            <div class="map-container">
+                <h3>Device Locations</h3>
+                <div class="offline-map-info">
+                    <strong>🌐 Map Options:</strong> Choose between online OpenStreetMap or offline map tiles for local network use.
+                </div>
+                                 <div class="map-controls">
+                     <select id="trackingMapType" onchange="changeTrackingMapType()">
+                         <option value="online">🌐 Online Map (OpenStreetMap)</option>
+                         <option value="offline">📱 Offline Map (Local Tiles)</option>
+                         <option value="satellite">🛰️ Satellite View</option>
+                         <option value="terrain">🏔️ Terrain View</option>
+                     </select>
+                     <select id="trackingMapStyle" onchange="changeTrackingMapStyle()">
+                         <option value="default">Default Style</option>
+                         <option value="dark">Dark Theme</option>
+                         <option value="light">Light Theme</option>
+                         <option value="high-contrast">High Contrast</option>
+                     </select>
+                     <button class="btn btn-info" onclick="showOfflineMapInstructions()" style="font-size: 0.8em;">❓ Help</button>
+                 </div>
+                <div id="map"></div>
+            </div>
+            </div>
+
+    <!-- Tracking History Tab -->
+    <div id="tracking-history" class="tab-content">
+        <div class="section">
+            <h3>📈 Tracking History</h3>
+            <div class="controls">
+                <button class="btn btn-primary" onclick="loadTrackingHistory()">🔄 Refresh History</button>
+                <button class="btn btn-success" onclick="exportTrackingHistory()">📤 Export History</button>
+                <button class="btn btn-warning" onclick="clearTrackingHistory()">🗑️ Clear History</button>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3>📍 Tracking Map Filters</h3>
+            <div class="export-options">
+                <div class="option-group">
+                    <label>📱 Device Filter:</label>
+                    <select id="historyDeviceFilter" class="form-control" onchange="filterTrackingHistory()">
+                        <option value="all">All Devices</option>
+                    </select>
+                    <button class="btn btn-info" onclick="loadExportDevices()" style="margin-left: 10px;">🔄 Refresh Devices</button>
+                </div>
+                <div class="option-group">
+                    <label>📅 Start Date:</label>
+                    <input type="datetime-local" id="historyStartDate" class="form-control" onchange="filterTrackingHistory()">
+                </div>
+                <div class="option-group">
+                    <label>📅 End Date:</label>
+                    <input type="datetime-local" id="historyEndDate" class="form-control" onchange="filterTrackingHistory()">
+                </div>
+                <div class="option-group">
+                    <label>🌍 Timezone:</label>
+                    <select id="historyTimezone" class="form-control" onchange="filterTrackingHistory()">
+                        <option value="UTC">UTC (Device Time)</option>
+                        <option value="UTC+7" selected>UTC+7 (WIB - Western Indonesian Time)</option>
+                        <option value="UTC+8">UTC+8 (WITA - Central Indonesian Time)</option>
+                        <option value="UTC+9">UTC+9 (WIT - Eastern Indonesian Time)</option>
+                        <option value="UTC+5:30">UTC+5:30 (IST - Indian Standard Time)</option>
+                        <option value="UTC+8:00">UTC+8:00 (China Standard Time)</option>
+                        <option value="UTC+9:00">UTC+9:00 (Japan Standard Time)</option>
+                        <option value="UTC-5">UTC-5 (EST - Eastern Standard Time)</option>
+                        <option value="UTC-8">UTC-8 (PST - Pacific Standard Time)</option>
+                        <option value="UTC+0">UTC+0 (GMT)</option>
+                        <option value="UTC+1">UTC+1 (CET - Central European Time)</option>
+                        <option value="UTC+2">UTC+2 (EET - Eastern European Time)</option>
+                        <option value="UTC+3">UTC+3 (MSK - Moscow Time)</option>
+                        <option value="UTC+4">UTC+4 (GST - Gulf Standard Time)</option>
+                        <option value="UTC+5">UTC+5 (PKT - Pakistan Standard Time)</option>
+                        <option value="UTC+6">UTC+6 (BST - Bangladesh Standard Time)</option>
+                        <option value="UTC+10">UTC+10 (AEST - Australian Eastern Standard Time)</option>
+                        <option value="UTC+11">UTC+11 (AEDT - Australian Eastern Daylight Time)</option>
+                        <option value="UTC+12">UTC+12 (NZST - New Zealand Standard Time)</option>
+                    </select>
+                </div>
+                <div class="option-group">
+                    <label>🎯 Show Tracking Lines:</label>
+                    <select id="showTrackingLines" class="form-control" onchange="toggleTrackingLines()">
+                        <option value="true">Show Lines</option>
+                        <option value="false">Hide Lines</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+                 <div class="section">
+             <h3>🗺️ Tracking Map</h3>
+             <div class="offline-map-info">
+                 <strong>🌐 Map Options:</strong> Choose between online OpenStreetMap or offline map tiles for local network use.
+             </div>
+                              <div class="map-controls">
+                     <select id="historyMapType" onchange="changeHistoryMapType()">
+                         <option value="online">🌐 Online Map (OpenStreetMap)</option>
+                         <option value="offline">📱 Offline Map (Local Tiles)</option>
+                         <option value="satellite">🛰️ Satellite View</option>
+                         <option value="terrain">🏔️ Terrain View</option>
+                     </select>
+                     <select id="historyMapStyle" onchange="changeHistoryMapStyle()">
+                         <option value="default">Default Style</option>
+                         <option value="dark">Dark Theme</option>
+                         <option value="light">Light Theme</option>
+                         <option value="high-contrast">High Contrast</option>
+                     </select>
+                     <button class="btn btn-info" onclick="showOfflineMapInstructions()" style="font-size: 0.8em;">❓ Help</button>
+                 </div>
+             <div class="map-container">
+                 <div id="trackingHistoryMap" style="width: 100%; height: 400px; border-radius: 6px; border: 1px solid #dee2e6;"></div>
+             </div>
+         </div>
+        
+        <div class="section">
+            <h3>📊 History Statistics</h3>
+            <div id="historyStats" class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalRecords">0</div>
+                    <div class="stat-label">Total Records</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalDevices">0</div>
+                    <div class="stat-label">Total Devices</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="dateRange">-</div>
+                    <div class="stat-label">Date Range</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="avgSpeed">0</div>
+                    <div class="stat-label">Avg Speed (km/h)</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3>📋 Recent Records</h3>
+            <div id="trackingHistoryTable" class="data-table">
+                <div class="no-data">Loading tracking history...</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3>📝 History Log</h3>
+            <div id="historyLog" class="log">
+                <div class="log-entry info">Tracking history initialized...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Export Tab -->
+    <div id="data-export" class="tab-content">
+                 <div class="section">
+             <h3>📤 Data Export</h3>
+             <div class="controls">
+                 <button class="btn btn-primary" onclick="exportAllData()">📤 Export All Data</button>
+                 <button class="btn btn-success" onclick="exportDeviceData()">📱 Export Device Data</button>
+                 <button class="btn btn-info" onclick="exportTrackingData()">📍 Export Tracking Data</button>
+                 <button class="btn btn-warning" onclick="exportSettings()">⚙️ Export Settings</button>
+                 <button class="btn btn-info" onclick="loadExportDevices()">🔄 Refresh Devices</button>
+             </div>
+         </div>
+        
+        <div class="section">
+            <h3>📊 Export Options</h3>
+            <div class="export-options">
+                <div class="option-group">
+                    <label>📅 Date Range:</label>
+                    <input type="date" id="exportStartDate" class="form-control">
+                    <input type="date" id="exportEndDate" class="form-control">
+                </div>
+                <div class="option-group">
+                    <label>📱 Device Filter:</label>
+                    <select id="exportDeviceFilter" class="form-control">
+                        <option value="all">All Devices</option>
+                    </select>
+                </div>
+                <div class="option-group">
+                    <label>📄 Format:</label>
+                    <select id="exportFormat" class="form-control">
+                        <option value="json">JSON</option>
+                        <option value="csv">CSV</option>
+                        <option value="excel">Excel</option>
+                    </select>
+                </div>
+                <div class="option-group">
+                    <label>🌍 Timezone:</label>
+                    <select id="exportTimezone" class="form-control">
+                        <option value="UTC">UTC (Device Time)</option>
+                        <option value="UTC+7" selected>UTC+7 (WIB - Western Indonesian Time)</option>
+                        <option value="UTC+8">UTC+8 (WITA - Central Indonesian Time)</option>
+                        <option value="UTC+9">UTC+9 (WIT - Eastern Indonesian Time)</option>
+                        <option value="UTC+5:30">UTC+5:30 (IST - Indian Standard Time)</option>
+                        <option value="UTC+8:00">UTC+8:00 (China Standard Time)</option>
+                        <option value="UTC+9:00">UTC+9:00 (Japan Standard Time)</option>
+                        <option value="UTC-5">UTC-5 (EST - Eastern Standard Time)</option>
+                        <option value="UTC-8">UTC-8 (PST - Pacific Standard Time)</option>
+                        <option value="UTC+0">UTC+0 (GMT)</option>
+                        <option value="UTC+1">UTC+1 (CET - Central European Time)</option>
+                        <option value="UTC+2">UTC+2 (EET - Eastern European Time)</option>
+                        <option value="UTC+3">UTC+3 (MSK - Moscow Time)</option>
+                        <option value="UTC+4">UTC+4 (GST - Gulf Standard Time)</option>
+                        <option value="UTC+5">UTC+5 (PKT - Pakistan Standard Time)</option>
+                        <option value="UTC+6">UTC+6 (BST - Bangladesh Standard Time)</option>
+                        <option value="UTC+10">UTC+10 (AEST - Australian Eastern Standard Time)</option>
+                        <option value="UTC+11">UTC+11 (AEDT - Australian Eastern Daylight Time)</option>
+                        <option value="UTC+12">UTC+12 (NZST - New Zealand Standard Time)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3>📋 Export History</h3>
+            <div id="exportHistory" class="data-table">
+                <div class="no-data">No exports yet...</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3>📝 Export Log</h3>
+            <div id="exportLog" class="log">
+                <div class="log-entry info">Data export initialized...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data SM Tab -->
+    <div id="data-sm" class="tab-content">
+                 <div class="section">
+             <h3>📊 Data SM Export</h3>
+             <div class="controls">
+                 <button class="btn btn-primary" onclick="exportDataSM()">📤 Export Data SM</button>
+                 <button class="btn btn-success" onclick="setupAutoExport()">⏰ Setup Auto Export</button>
+                 <button class="btn btn-info" onclick="loadDataSMHistory()">📋 Export History</button>
+                 <button class="btn btn-info" onclick="loadExportDevices()">🔄 Refresh Devices</button>
+             </div>
+         </div>
+        
+        <div class="section">
+            <h3>📊 Export Options</h3>
+            <div class="export-options">
+                <div class="option-group">
+                    <label>📅 Date Range:</label>
+                    <input type="datetime-local" id="smStartDate" class="form-control">
+                    <input type="datetime-local" id="smEndDate" class="form-control">
+                </div>
+                <div class="option-group">
+                    <label>📱 Device Filter:</label>
+                    <select id="smDeviceFilter" class="form-control">
+                        <option value="all">All Devices</option>
+                    </select>
+                </div>
+                <div class="option-group">
+                    <label>📁 File Template:</label>
+                    <input type="text" id="smFileTemplate" class="form-control" placeholder="GroupName_DeviceName_YYYY-MM-DD.pfsl" value="GroupName_DeviceName_YYYY-MM-DD.pfsl">
+                </div>
+                <div class="option-group">
+                    <label>⏰ Auto Export:</label>
+                    <select id="smAutoExport" class="form-control">
+                        <option value="disabled">Disabled</option>
+                        <option value="daily">Daily at Midnight</option>
+                        <option value="weekly">Weekly on Sunday</option>
+                    </select>
+                </div>
+                <div class="option-group">
+                    <label>🌍 Timezone:</label>
+                    <select id="smTimezone" class="form-control">
+                        <option value="UTC">UTC (Device Time)</option>
+                        <option value="UTC+7" selected>UTC+7 (WIB - Western Indonesian Time)</option>
+                        <option value="UTC+8">UTC+8 (WITA - Central Indonesian Time)</option>
+                        <option value="UTC+9">UTC+9 (WIT - Eastern Indonesian Time)</option>
+                        <option value="UTC+5:30">UTC+5:30 (IST - Indian Standard Time)</option>
+                        <option value="UTC+8:00">UTC+8:00 (China Standard Time)</option>
+                        <option value="UTC+9:00">UTC+9:00 (Japan Standard Time)</option>
+                        <option value="UTC-5">UTC-5 (EST - Eastern Standard Time)</option>
+                        <option value="UTC-8">UTC-8 (PST - Pacific Standard Time)</option>
+                        <option value="UTC+0">UTC+0 (GMT)</option>
+                        <option value="UTC+1">UTC+1 (CET - Central European Time)</option>
+                        <option value="UTC+2">UTC+2 (EET - Eastern European Time)</option>
+                        <option value="UTC+3">UTC+3 (MSK - Moscow Time)</option>
+                        <option value="UTC+4">UTC+4 (GST - Gulf Standard Time)</option>
+                        <option value="UTC+5">UTC+5 (PKT - Pakistan Standard Time)</option>
+                        <option value="UTC+6">UTC+6 (BST - Bangladesh Standard Time)</option>
+                        <option value="UTC+10">UTC+10 (AEST - Australian Eastern Standard Time)</option>
+                        <option value="UTC+11">UTC+11 (AEDT - Australian Eastern Daylight Time)</option>
+                        <option value="UTC+12">UTC+12 (NZST - New Zealand Standard Time)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3>📋 Data SM Preview</h3>
+            <div id="dataSMPreview" class="data-table">
+                <div class="no-data">No data to preview. Set filters and click Export to see data.</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3>📝 Data SM Log</h3>
+            <div id="dataSMLog" class="log">
+                <div class="log-entry info">Data SM initialized...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SM EXPORT Tab -->
+    <div id="sm-export" class="tab-content">
+        <div class="section">
+            <h3>📋 SM EXPORT</h3>
+            <div class="controls">
+                <button class="btn btn-primary" onclick="exportSMExport()">📤 Export SM</button>
+                <button class="btn btn-success" onclick="setupSMAutoExport()">⏰ Setup Auto Export</button>
+                <button class="btn btn-info" onclick="loadSMExportHistory()">📋 Export History</button>
+                <button class="btn btn-info" onclick="loadExportDevices()">🔄 Refresh Devices</button>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3>📋 Export Options</h3>
+            <div class="export-options">
+                <div class="option-group">
+                    <label>📅 Date Range:</label>
+                    <input type="datetime-local" id="smExportStartDate" class="form-control">
+                    <input type="datetime-local" id="smExportEndDate" class="form-control">
+                </div>
+                <div class="option-group">
+                    <label>📱 Device Filter:</label>
+                    <select id="smExportDeviceFilter" class="form-control">
+                        <option value="all">All Devices</option>
+                    </select>
+                </div>
+                <div class="option-group">
+                    <label>📁 File Template:</label>
+                    <input type="text" id="smExportFileTemplate" class="form-control" placeholder="GroupName_DeviceName_YYYY-MM-DD.pfsl" value="GroupName_DeviceName_YYYY-MM-DD.pfsl">
+                </div>
+                <div class="option-group">
+                    <label>⏰ Auto Export:</label>
+                    <select id="smExportAutoExport" class="form-control">
+                        <option value="disabled">Disabled</option>
+                        <option value="daily">Daily at Midnight</option>
+                        <option value="weekly">Weekly on Sunday</option>
+                    </select>
+                </div>
+                <div class="option-group">
+                    <label>🌍 Timezone:</label>
+                    <select id="smExportTimezone" class="form-control">
+                        <option value="UTC">UTC (Device Time)</option>
+                        <option value="UTC+7" selected>UTC+7 (WIB - Western Indonesian Time)</option>
+                        <option value="UTC+8">UTC+8 (WITA - Central Indonesian Time)</option>
+                        <option value="UTC+9">UTC+9 (WIT - Eastern Indonesian Time)</option>
+                        <option value="UTC+5:30">UTC+5:30 (IST - Indian Standard Time)</option>
+                        <option value="UTC+8:00">UTC+8:00 (China Standard Time)</option>
+                        <option value="UTC+9:00">UTC+9:00 (Japan Standard Time)</option>
+                        <option value="UTC-5">UTC-5 (EST - Eastern Standard Time)</option>
+                        <option value="UTC-8">UTC-8 (PST - Pacific Standard Time)</option>
+                        <option value="UTC+0">UTC+0 (GMT)</option>
+                        <option value="UTC+1">UTC+1 (CET - Central European Time)</option>
+                        <option value="UTC+2">UTC+2 (EET - Eastern European Time)</option>
+                        <option value="UTC+3">UTC+3 (MSK - Moscow Time)</option>
+                        <option value="UTC+4">UTC+4 (GST - Gulf Standard Time)</option>
+                        <option value="UTC+5">UTC+5 (PKT - Pakistan Standard Time)</option>
+                        <option value="UTC+6">UTC+6 (BST - Bangladesh Standard Time)</option>
+                        <option value="UTC+10">UTC+10 (AEST - Australian Eastern Standard Time)</option>
+                        <option value="UTC+11">UTC+11 (AEDT - Australian Eastern Daylight Time)</option>
+                        <option value="UTC+12">UTC+12 (NZST - New Zealand Standard Time)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3>📋 SM Export Preview</h3>
+            <div id="smExportPreview" class="data-table">
+                <div class="no-data">No data to preview. Set filters and click Export to see data.</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3>📝 SM Export Log</h3>
+            <div id="smExportLog" class="log">
+                <div class="log-entry info">SM Export initialized...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Device Management Tab -->
+    <div id="device-management" class="tab-content">
+                 <div class="section">
+             <h3>📱 Device Management</h3>
+             <div class="controls">
+                 <button class="btn btn-primary" onclick="loadDevices()">🔄 Refresh Devices</button>
+                 <button class="btn btn-success" onclick="saveDeviceChanges()">💾 Save Changes</button>
+                 <button class="btn btn-info" onclick="exportDeviceConfig()">📤 Export Config</button>
+             </div>
+             <div class="server-info" style="margin-top: 15px; padding: 10px; background: #e3f2fd; border: 1px solid #2196f3; border-radius: 6px;">
+                 <strong>🌐 Server Information:</strong>
+                 <div style="margin-top: 5px; font-size: 0.9em;">
+                     <span><strong>Server IP:</strong> <span id="serverIP">Loading...</span></span><br>
+                     <span><strong>Server Port:</strong> <span id="serverPort">3001</span></span><br>
+                     <span><strong>Access URL:</strong> <span id="serverURL">Loading...</span> 
+                     <button class="btn btn-sm btn-info" onclick="copyServerURL()" style="margin-left: 10px; font-size: 0.8em;">📋 Copy URL</button></span>
+                 </div>
+                 <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #2196f3;">
+                     <strong>🔄 IP Auto-Refresh:</strong>
+                     <div style="margin-top: 5px;">
+                         <button class="btn btn-sm btn-success" onclick="refreshServerInfo()" style="margin-right: 10px; font-size: 0.8em;">🔄 Refresh Now</button>
+                         <button class="btn btn-sm btn-primary" onclick="startIPAutoRefresh()" id="startAutoRefreshBtn" style="margin-right: 10px; font-size: 0.8em;">▶️ Start Auto-Refresh</button>
+                         <button class="btn btn-sm btn-warning" onclick="stopIPAutoRefresh()" id="stopAutoRefreshBtn" style="font-size: 0.8em; display: none;">⏹️ Stop Auto-Refresh</button>
+                         <span style="color: #666; font-size: 0.8em; margin-left: 10px;">Updates every 30 seconds</span>
+                     </div>
+                 </div>
+             </div>
+         </div>
+        
+        <div class="section">
+            <h3>📊 Device Groups</h3>
+            <div class="controls">
+                <input type="text" id="newGroupName" class="form-control" placeholder="New Group Name" style="width: 200px;">
+                <button class="btn btn-primary" onclick="addGroup()">➕ Add Group</button>
+            </div>
+            <div id="deviceGroups" class="data-table" style="margin-top: 15px;">
+                <div class="no-data">Loading device groups...</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3>📱 Device List</h3>
+            <div id="deviceManagementList" class="data-table">
+                <div class="no-data">Loading devices...</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3>📝 Device Management Log</h3>
+            <div id="deviceManagementLog" class="log">
+                <div class="log-entry info">Device management initialized...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Peer Sync Tab -->
+    <div id="peer-sync" class="tab-content">
+            <div class="section">
+                <h3>🔄 Peer Configuration</h3>
+                <div class="input-group">
+                    <label for="peerUrl">Peer Server URL:</label>
+                    <input type="text" id="peerUrl" placeholder="http://192.168.1.100:3001" />
+                </div>
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="addPeer()">Add Peer</button>
+                    <button class="btn btn-success" onclick="testConnection()">Test Connection</button>
+                    <button class="btn btn-warning" onclick="syncData()" id="syncButton">🔄 Sync Data</button>
+                </div>
+            </div>
+
+            <div class="section" id="syncStatusSection" style="display: none;">
+                <h3>🔄 Sync Status</h3>
+                <div class="input-group">
+                    <label>Sync Status:</label>
+                    <div id="syncStatusBar" class="status info">Ready to sync</div>
+                </div>
+                <div class="input-group">
+                    <label>Progress:</label>
+                    <div class="progress-bar">
+                        <div id="syncProgress" class="progress-fill" style="width: 0%"></div>
+                    </div>
+                    <div id="syncProgressText">0%</div>
+                </div>
+                <div class="input-group">
+                    <label>Last Sync Time:</label>
+                    <div id="lastSyncTime" class="data-item">Never</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>📱 Connected Devices</h3>
+                <div id="deviceList" class="device-list">
+                    <div class="no-data">No devices connected</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>📝 Activity Log</h3>
+                <div id="activityLog" class="log">
+                    <div class="log-entry info">Peer sync initialized...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Management Tab -->
+        <div id="data-management" class="tab-content">
+            <div class="stats-grid" id="statsGrid">
+                <div class="no-data">Loading statistics...</div>
+            </div>
+            
+            <div class="section">
+                <h3>📊 Data Operations</h3>
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="loadStats()">🔄 Refresh Stats</button>
+                    <button class="btn btn-success" onclick="saveData()">💾 Save Data</button>
+                    <button class="btn btn-warning" onclick="exportData()">📤 Export Data</button>
+                    <button class="btn btn-danger" onclick="clearAllData()">🗑️ Clear All Data</button>
+                </div>
+            </div>
+            
+            <div class="section" id="storageInfo">
+                <h3>💾 Storage Information</h3>
+                <div class="no-data">Loading storage info...</div>
+            </div>
+            
+            <div class="section">
+                <h3>📝 Activity Log</h3>
+                <div id="dataLog" class="log">
+                    <div class="log-entry info">Data management initialized...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Device Commands Tab -->
+        <div id="device-commands" class="tab-content">
+            <div class="section">
+                <h3>🎮 Device Commands</h3>
+                <div class="status-bar">
+                    <div class="status-indicator">
+                        <div class="status-dot" id="commandStatusDot"></div>
+                        <span id="commandStatusText">Ready</span>
+                    </div>
+                    <div class="controls">
+                        <button class="btn btn-primary" onclick="loadConnectedDevices()">🔄 Refresh Devices</button>
+                        <button class="btn btn-warning" onclick="clearCommandLog()">🗑️ Clear Log</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>📱 Connected Devices</h3>
+                <div id="connectedDevicesList" class="device-list">
+                    <div class="no-data">No devices connected</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>🎯 Command Testing</h3>
+                <div class="input-group">
+                    <label for="commandDeviceIMEI">Device IMEI:</label>
+                    <input type="text" id="commandDeviceIMEI" placeholder="Enter device IMEI" />
+                </div>
+                <div class="input-group">
+                    <label for="commandDeviceNumber">Device Number:</label>
+                    <input type="number" id="commandDeviceNumber" value="0" min="0" max="65535" />
+                </div>
+                <div class="input-group">
+                    <label for="commandText">Command:</label>
+                    <select id="commandText" onchange="updateCustomCommand()">
+                        <option value="status">Status Request</option>
+                        <option value="reset">Reset Device</option>
+                        <option value="emergency">Emergency Stop</option>
+                        <option value="getconfig">Get Configuration</option>
+                        <option value="setoutput 15">Set Output (15)</option>
+                        <option value="custom">Custom Command</option>
+                    </select>
+                </div>
+                <div class="input-group" id="customCommandGroup" style="display: none;">
+                    <label for="customCommandText">Custom Command:</label>
+                    <input type="text" id="customCommandText" placeholder="Enter custom command text" />
+                </div>
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="sendDeviceCommand()">📤 Send Command</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>⚡ Quick Commands</h3>
+                <div class="input-group">
+                    <label for="quickDeviceIMEI">Device IMEI:</label>
+                    <input type="text" id="quickDeviceIMEI" placeholder="Enter device IMEI" />
+                </div>
+                <div class="quick-commands">
+                    <button class="btn btn-info" onclick="sendQuickCommand('status')">📊 Get Status</button>
+                    <button class="btn btn-warning" onclick="sendQuickCommand('reset')">🔄 Reset Device</button>
+                    <button class="btn btn-danger" onclick="sendQuickCommand('emergency')">🛑 Emergency Stop</button>
+                    <button class="btn btn-success" onclick="sendQuickCommand('getconfig')">⚙️ Get Config</button>
+                </div>
+                <div class="input-group">
+                    <label>Output Control:</label>
+                    <div class="output-controls">
+                        <label><input type="checkbox" id="output0" /> Output 0</label>
+                        <label><input type="checkbox" id="output1" /> Output 1</label>
+                        <label><input type="checkbox" id="output2" /> Output 2</label>
+                        <label><input type="checkbox" id="output3" /> Output 3</label>
+                    </div>
+                    <button class="btn btn-primary" onclick="setOutputs()">🎛️ Set Outputs</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>📋 Command Log</h3>
+                <div id="commandLog" class="log">
+                    <div class="log-entry info">Device commands initialized...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+                 // Global variables
+         let map;
+         let markers = new Map();
+         let dataRecords = [];
+         let socket = null;
+         let peers = [];
+         let syncInProgress = false;
+         let deviceGroups = [];
+         let deviceConfigs = {};
+         let currentMapLayer = null;
+         let currentHistoryMapLayer = null;
+
+        // Configuration
+        const config = {
+            apiUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+                ? 'http://localhost:3001' 
+                : `http://${window.location.hostname}:3001`,
+            socketUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+                ? 'http://localhost:3001'
+                : `http://${window.location.hostname}:3001`,
+            maxRecords: 1000
+        };
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', init);
+
+                         function init() {
+            initializeMap();
+            loadPeers();
+            connectSocket();
+            loadStats();
+            loadStorageInfo();
+            startStatusCheck();
+            
+            // Load device configurations
+            const savedConfigs = localStorage.getItem('deviceConfigs');
+            if (savedConfigs) {
+                deviceConfigs = JSON.parse(savedConfigs);
+            }
+            
+            const savedGroups = localStorage.getItem('deviceGroups');
+            if (savedGroups) {
+                deviceGroups = JSON.parse(savedGroups);
+            }
+            
+            // Load devices for export tabs
+            loadExportDevices();
+            
+            // Start auto export timer if configured
+            startAutoExportTimer();
+            
+            // Check offline map availability
+            checkOfflineMapAvailability();
+        }
+
+                 function initializeMap() {
+             map = L.map('map').setView([0, 0], 2);
+             currentMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                 attribution: '© OpenStreetMap contributors'
+             }).addTo(map);
+         }
+
+         // Map type and style functions
+         function changeTrackingMapType() {
+             const mapType = document.getElementById('trackingMapType').value;
+             const mapStyle = document.getElementById('trackingMapStyle').value;
+             
+             if (currentMapLayer) {
+                 map.removeLayer(currentMapLayer);
+             }
+             
+             currentMapLayer = getMapLayer(mapType, mapStyle);
+             currentMapLayer.addTo(map);
+             
+             log('info', `Changed tracking map to ${mapType} with ${mapStyle} style`);
+         }
+
+         function changeTrackingMapStyle() {
+             changeTrackingMapType(); // Reapply with new style
+         }
+
+         function changeHistoryMapType() {
+             const mapType = document.getElementById('historyMapType').value;
+             const mapStyle = document.getElementById('historyMapStyle').value;
+             
+             if (!trackingHistoryMap) return;
+             
+             if (currentHistoryMapLayer) {
+                 trackingHistoryMap.removeLayer(currentHistoryMapLayer);
+             }
+             
+             currentHistoryMapLayer = getMapLayer(mapType, mapStyle);
+             currentHistoryMapLayer.addTo(trackingHistoryMap);
+             
+             log('info', `Changed history map to ${mapType} with ${mapStyle} style`, 'historyLog');
+         }
+
+         function changeHistoryMapStyle() {
+             changeHistoryMapType(); // Reapply with new style
+         }
+
+         function getMapLayer(mapType, mapStyle) {
+             const baseUrl = window.location.origin;
+             
+             switch (mapType) {
+                 case 'offline':
+                     return L.tileLayer(`${baseUrl}/tiles/{z}/{x}/{y}.png`, {
+                         attribution: 'Offline Map Tiles',
+                         maxZoom: 18,
+                         minZoom: 1,
+                         errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+                     });
+                 
+                 case 'satellite':
+                     return L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                         attribution: '© Esri',
+                         maxZoom: 19
+                     });
+                 
+                 case 'terrain':
+                     return L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+                         attribution: '© OpenTopoMap',
+                         maxZoom: 17
+                     });
+                 
+                 case 'online':
+                 default:
+                     const style = getMapStyle(mapStyle);
+                     return L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                         attribution: '© OpenStreetMap contributors',
+                         ...style
+                     });
+             }
+         }
+
+         function getMapStyle(style) {
+             switch (style) {
+                 case 'dark':
+                     return {
+                         className: 'dark-map',
+                         style: 'filter: invert(90%) hue-rotate(180deg);'
+                     };
+                 case 'light':
+                     return {
+                         className: 'light-map',
+                         style: 'filter: brightness(1.2) contrast(0.9);'
+                     };
+                 case 'high-contrast':
+                     return {
+                         className: 'high-contrast-map',
+                         style: 'filter: contrast(1.5) brightness(1.1);'
+                     };
+                 default:
+                     return {};
+             }
+         }
+
+
+
+        // Tracking functionality
+        function connectSocket() {
+            if (socket) {
+                socket.close();
+                return;
+            }
+
+            try {
+                socket = io(config.socketUrl);
+                
+                socket.on('connect', function() {
+                    updateStatus(true);
+                    log('info', 'Socket connected successfully');
+                });
+                
+                socket.on('deviceData', function(data) {
+                    processData(data);
+                });
+                
+                socket.on('disconnect', function() {
+                    updateStatus(false);
+                    log('info', 'Socket disconnected');
+                    socket = null;
+                    setTimeout(() => {
+                        if (!socket) connectSocket();
+                    }, 5000);
+                });
+                
+                socket.on('connect_error', function(error) {
+                    updateStatus(false);
+                    log('error', 'Socket connection error: ' + error.message);
+                    setTimeout(() => {
+                        if (!socket) connectSocket();
+                    }, 10000);
+                });
+            } catch (error) {
+                log('error', 'Error connecting to Socket: ' + error.message);
+                updateStatus(false);
+            }
+        }
+
+        function updateStatus(connected) {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            
+            if (connected) {
+                statusDot.className = 'status-dot connected';
+                statusText.textContent = 'Connected';
+            } else {
+                statusDot.className = 'status-dot disconnected';
+                statusText.textContent = 'Disconnected';
+            }
+        }
+
+        function processData(data) {
+            if (!data || typeof data !== 'object') return;
+            
+            if (!data.timestamp) {
+                data.timestamp = new Date().toISOString();
+            }
+            
+            dataRecords.unshift(data);
+            if (dataRecords.length > config.maxRecords) {
+                dataRecords = dataRecords.slice(0, config.maxRecords);
+            }
+            
+            updateStatus(true);
+            updateCurrentData();
+            updateMap(data);
+        }
+
+        function updateCurrentData() {
+            const container = document.getElementById('currentData');
+            
+            if (dataRecords.length === 0) {
+                container.innerHTML = '<div class="no-data">No data available</div>';
+                return;
+            }
+            
+            const latestData = dataRecords[0];
+            let html = '';
+            Object.keys(latestData).forEach(key => {
+                if (key === '__proto__') return;
+                let value = latestData[key];
+                if (typeof value === 'object' && value !== null) {
+                    value = JSON.stringify(value);
+                }
+                html += `
+                    <div class="data-item">
+                        <div class="data-label">${key}</div>
+                        <div class="data-value">${value}</div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function updateMap(data) {
+            if (!data.latitude || !data.longitude) return;
+            
+            const deviceId = data.deviceId || data.imei || 'unknown';
+            
+            if (markers.has(deviceId)) {
+                map.removeLayer(markers.get(deviceId));
+            }
+            
+            const marker = L.marker([data.latitude, data.longitude]).addTo(map);
+            
+            const popupContent = `
+                <div style="min-width: 200px;">
+                    <h4>Device: ${deviceId}</h4>
+                    <p><strong>Time:</strong> ${new Date(data.timestamp).toLocaleString()}</p>
+                    <p><strong>Location:</strong> ${data.latitude.toFixed(6)}, ${data.longitude.toFixed(6)}</p>
+                    ${data.speed ? `<p><strong>Speed:</strong> ${data.speed} km/h</p>` : ''}
+                    ${data.direction ? `<p><strong>Direction:</strong> ${data.direction}°</p>` : ''}
+                </div>
+            `;
+            
+            marker.bindPopup(popupContent);
+            markers.set(deviceId, marker);
+            
+            const markerGroup = L.featureGroup(Array.from(markers.values()));
+            if (markers.size === 1) {
+                map.setView([data.latitude, data.longitude], 13);
+            } else {
+                map.fitBounds(markerGroup.getBounds());
+            }
+        }
+
+        function clearData() {
+            if (confirm('Are you sure you want to clear all data?')) {
+                dataRecords = [];
+                markers.clear();
+                map.eachLayer(layer => {
+                    if (layer instanceof L.Marker) {
+                        map.removeLayer(layer);
+                    }
+                });
+                updateCurrentData();
+            }
+        }
+
+        function downloadData() {
+            if (dataRecords.length === 0) {
+                alert('No data to download');
+                return;
+            }
+            const allKeys = Array.from(new Set(dataRecords.flatMap(record => Object.keys(record))));
+            const headers = allKeys;
+            const csvContent = [
+                headers.join(','),
+                ...dataRecords.map(record =>
+                    headers.map(key => {
+                        let value = record[key];
+                        if (typeof value === 'object' && value !== null) {
+                            value = JSON.stringify(value);
+                        }
+                        if (typeof value === 'string' && value.includes(',')) {
+                            value = '"' + value.replace(/"/g, '""') + '"';
+                        }
+                        return value !== undefined ? value : '';
+                    }).join(',')
+                )
+            ].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ohw_data_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Peer Sync functionality
+        function addPeer() {
+            const url = document.getElementById('peerUrl').value.trim();
+            if (!url) {
+                log('error', 'Please enter a peer URL');
+                return;
+            }
+            
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                log('error', 'Please enter a valid URL starting with http:// or https://');
+                return;
+            }
+            
+            if (peers.find(p => p.url === url)) {
+                log('error', 'Peer already exists');
+                return;
+            }
+            
+            const peer = {
+                id: Date.now().toString(),
+                url: url,
+                name: `Peer ${peers.length + 1}`,
+                status: 'connecting',
+                lastSync: null
+            };
+            
+            peers.push(peer);
+            savePeers();
+            updatePeerList();
+            log('info', `Adding peer: ${url}`);
+            testPeerConnection(peer);
+        }
+
+        async function testPeerConnection(peer) {
+            try {
+                const response = await fetch(`${peer.url}/api/status`, {
+                    method: 'GET',
+                    timeout: 5000
+                });
+                
+                if (response.ok) {
+                    peer.status = 'online';
+                    peer.lastSync = new Date().toISOString();
+                    log('success', `Peer ${peer.name} is online`);
+                } else {
+                    peer.status = 'offline';
+                    log('error', `Peer ${peer.name} is offline`);
+                }
+            } catch (error) {
+                peer.status = 'offline';
+                log('error', `Failed to connect to peer ${peer.name}: ${error.message}`);
+            }
+            
+            savePeers();
+            updatePeerList();
+        }
+
+        async function testConnection() {
+            const url = document.getElementById('peerUrl').value.trim();
+            if (!url) {
+                log('error', 'Please enter a peer URL first');
+                return;
+            }
+            
+            log('info', `Testing connection to: ${url}`);
+            
+            try {
+                const response = await fetch(`${url}/api/status`, {
+                    method: 'GET',
+                    timeout: 5000
+                });
+                
+                if (response.ok) {
+                    log('success', 'Connection test successful');
+                } else {
+                    log('error', `HTTP error: ${response.status}`);
+                }
+            } catch (error) {
+                log('error', `Connection test failed: ${error.message}`);
+            }
+        }
+
+        async function syncData() {
+            if (syncInProgress) {
+                log('warning', 'Sync already in progress, please wait...');
+                return;
+            }
+
+            if (peers.length === 0) {
+                log('warning', 'No peers configured for sync');
+                return;
+            }
+
+            document.getElementById('syncStatusSection').style.display = 'block';
+            syncInProgress = true;
+            document.getElementById('syncButton').disabled = true;
+            document.getElementById('syncButton').textContent = '🔄 Syncing...';
+
+            updateSyncProgress(0, 'Initializing sync...');
+            document.getElementById('syncStatusBar').textContent = 'Starting sync...';
+            document.getElementById('syncStatusBar').className = 'status info';
+
+            const onlinePeers = peers.filter(p => p.status === 'online');
+            if (onlinePeers.length === 0) {
+                updateSyncProgress(100, 'No online peers available');
+                document.getElementById('syncStatusBar').textContent = 'No online peers available';
+                document.getElementById('syncStatusBar').className = 'status warning';
+                syncInProgress = false;
+                document.getElementById('syncButton').disabled = false;
+                document.getElementById('syncButton').textContent = '🔄 Sync Data';
+                return;
+            }
+
+            log('info', `Starting sync with ${onlinePeers.length} online peers`);
+            
+            let totalNewRecords = 0;
+            let successfulSyncs = 0;
+            let failedSyncs = 0;
+
+            let currentData = null;
+            try {
+                const dataResponse = await fetch(`${config.apiUrl}/api/data`);
+                if (dataResponse.ok) {
+                    currentData = await dataResponse.json();
+                    log('info', `📊 Current data: ${currentData.totalRecords || 0} records, ${currentData.totalDevices || 0} devices`);
+                } else {
+                    log('error', 'Failed to get current data for sync');
+                    syncInProgress = false;
+                    document.getElementById('syncButton').disabled = false;
+                    document.getElementById('syncButton').textContent = '🔄 Sync Data';
+                    return;
+                }
+            } catch (error) {
+                log('error', `Failed to get current data: ${error.message}`);
+                syncInProgress = false;
+                document.getElementById('syncButton').disabled = false;
+                document.getElementById('syncButton').textContent = '🔄 Sync Data';
+                return;
+            }
+
+            for (let i = 0; i < onlinePeers.length; i++) {
+                const peer = onlinePeers[i];
+                const progress = Math.round(((i + 1) / onlinePeers.length) * 100);
+                
+                updateSyncProgress(progress, `Syncing with ${peer.name}...`);
+                document.getElementById('syncStatusBar').textContent = `Syncing with ${peer.name}...`;
+                
+                try {
+                    log('info', `Syncing with peer: ${peer.name} (${peer.url})`);
+                    
+                    const devicesForSync = {};
+                    if (currentData.devices) {
+                        Object.entries(currentData.devices).forEach(([key, deviceInfo]) => {
+                            const imei = deviceInfo.deviceId || key;
+                            devicesForSync[imei] = deviceInfo;
+                        });
+                    }
+                    
+                    const response = await fetch(`${peer.url}/peer/sync`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            deviceId: 'unified-mobile-interface',
+                            records: currentData.records || [],
+                            devices: devicesForSync,
+                            lastIMEI: currentData.lastIMEI || null,
+                            exportTime: new Date().toISOString()
+                        }),
+                        timeout: 30000
+                    });
+
+                    if (response.ok) {
+                        const syncResult = await response.json();
+                        
+                        if (syncResult.success) {
+                            const newRecords = syncResult.syncResult?.newRecords || 0;
+                            totalNewRecords += newRecords;
+                            successfulSyncs++;
+                            
+                            log('success', `✅ Sync with ${peer.name} successful: ${newRecords} new records`);
+                            peer.lastSync = new Date().toISOString();
+                        } else {
+                            failedSyncs++;
+                            log('error', `❌ Sync with ${peer.name} failed: ${syncResult.error || 'Unknown error'}`);
+                        }
+                    } else {
+                        failedSyncs++;
+                        log('error', `❌ HTTP error syncing with ${peer.name}: ${response.status}`);
+                    }
+                } catch (error) {
+                    failedSyncs++;
+                    log('error', `❌ Sync error with ${peer.name}: ${error.message}`);
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+
+            updateSyncProgress(100, 'Sync completed');
+            
+            if (successfulSyncs > 0) {
+                document.getElementById('syncStatusBar').textContent = `✅ Sync Complete: ${successfulSyncs} successful, ${totalNewRecords} new records`;
+                document.getElementById('syncStatusBar').className = 'status success';
+                document.getElementById('lastSyncTime').textContent = new Date().toLocaleString();
+                
+                log('success', `🎉 Sync completed successfully!`);
+                log('success', `📊 Results: ${successfulSyncs} successful syncs, ${totalNewRecords} new records`);
+            } else {
+                document.getElementById('syncStatusBar').textContent = `❌ Sync Failed: All ${failedSyncs} attempts failed`;
+                document.getElementById('syncStatusBar').className = 'status error';
+                log('error', `❌ Sync failed: All ${failedSyncs} attempts failed`);
+            }
+
+            syncInProgress = false;
+            document.getElementById('syncButton').disabled = false;
+            document.getElementById('syncButton').textContent = '🔄 Sync Data';
+            
+            setTimeout(() => {
+                document.getElementById('syncStatusSection').style.display = 'none';
+            }, 5000);
+        }
+
+        function updateSyncProgress(percentage, text) {
+            document.getElementById('syncProgress').style.width = `${percentage}%`;
+            document.getElementById('syncProgressText').textContent = `${percentage}% - ${text}`;
+        }
+
+        function savePeers() {
+            localStorage.setItem('galileosky_peers', JSON.stringify(peers));
+        }
+
+        function loadPeers() {
+            const saved = localStorage.getItem('galileosky_peers');
+            if (saved) {
+                peers = JSON.parse(saved);
+                log('info', `Loaded ${peers.length} saved peers`);
+            }
+        }
+
+        function updatePeerList() {
+            const deviceList = document.getElementById('deviceList');
+            if (peers.length === 0) {
+                deviceList.innerHTML = '<div class="no-data">No peers configured</div>';
+                return;
+            }
+            
+            let html = '';
+            peers.forEach(peer => {
+                const statusClass = peer.status === 'online' ? 'connected' : 'disconnected';
+                const lastSync = peer.lastSync ? new Date(peer.lastSync).toLocaleString() : 'Never';
+                
+                html += `
+                    <div class="device-item ${statusClass}">
+                        <div>
+                            <strong>${peer.name}</strong><br>
+                            <small>${peer.url}</small>
+                        </div>
+                        <div>
+                            <span class="status-dot ${statusClass}"></span>
+                            <small>Last sync: ${lastSync}</small>
+                        </div>
+                    </div>
+                `;
+            });
+            deviceList.innerHTML = html;
+        }
+
+        // Data Management functionality
+        async function loadStats() {
+            try {
+                log('info', 'Loading statistics...');
+                const response = await fetch(`${config.apiUrl}/api/stats`);
+                const stats = await response.json();
+                
+                const statsGrid = document.getElementById('statsGrid');
+                statsGrid.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-number">${stats.totalRecords || 0}</div>
+                        <div class="stat-label">Total Records</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${stats.activeDevices || 0}</div>
+                        <div class="stat-label">Active Devices</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${stats.activeConnections || 0}</div>
+                        <div class="stat-label">Active Connections</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${stats.lastUpdate ? new Date(stats.lastUpdate).toLocaleDateString() : 'N/A'}</div>
+                        <div class="stat-label">Last Update</div>
+                    </div>
+                `;
+                log('success', 'Statistics loaded successfully');
+            } catch (error) {
+                log('error', `Error loading stats: ${error.message}`);
+            }
+        }
+
+        async function loadStorageInfo() {
+            try {
+                log('info', 'Loading storage information...');
+                const response = await fetch(`${config.apiUrl}/api/data/storage-info`);
+                const storageInfo = await response.json();
+                
+                const storageDiv = document.getElementById('storageInfo');
+                storageDiv.innerHTML = `
+                    <h3>💾 Storage Information</h3>
+                    <div class="data-item">
+                        <div class="data-label">Parsed Data File</div>
+                        <div class="data-value">${storageInfo.parsedDataFile.exists ? 'Exists' : 'Missing'} (${(storageInfo.parsedDataFile.size / 1024).toFixed(1)} KB)</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Devices File</div>
+                        <div class="data-value">${storageInfo.devicesFile.exists ? 'Exists' : 'Missing'} (${(storageInfo.devicesFile.size / 1024).toFixed(1)} KB)</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Memory Records</div>
+                        <div class="data-value">${storageInfo.memoryData.records}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Memory Devices</div>
+                        <div class="data-value">${storageInfo.memoryData.devices}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-label">Auto-Save</div>
+                        <div class="data-value">${storageInfo.autoSave.enabled ? 'Enabled' : 'Disabled'}</div>
+                    </div>
+                `;
+                log('success', 'Storage information loaded successfully');
+            } catch (error) {
+                log('error', `Error loading storage info: ${error.message}`);
+            }
+        }
+
+        async function saveData() {
+            try {
+                log('info', 'Saving data...');
+                const response = await fetch(`${config.apiUrl}/api/data/save`, { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    log('success', `Data saved successfully: ${result.records} records, ${result.devices} devices`);
+                    loadStats();
+                    loadStorageInfo();
+                } else {
+                    log('error', 'Failed to save data');
+                }
+            } catch (error) {
+                log('error', `Error saving data: ${error.message}`);
+            }
+        }
+
+        async function exportData() {
+            try {
+                log('info', 'Exporting data...');
+                window.open(`${config.apiUrl}/api/data/export`, '_blank');
+                log('success', 'Data export initiated');
+            } catch (error) {
+                log('error', `Error exporting data: ${error.message}`);
+            }
+        }
+
+        async function clearAllData() {
+            if (!confirm('Are you sure you want to clear ALL data? This action cannot be undone!')) {
+                return;
+            }
+            
+            try {
+                log('info', 'Clearing all data...');
+                const response = await fetch(`${config.apiUrl}/api/data/clear`, { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    log('success', 'All data cleared successfully');
+                    loadStats();
+                    loadStorageInfo();
+                } else {
+                    log('error', 'Failed to clear data');
+                }
+            } catch (error) {
+                log('error', `Error clearing data: ${error.message}`);
+            }
+        }
+
+        // Utility functions
+        function log(type, message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            
+            // Add to both activity logs
+            const activityLog = document.getElementById('activityLog');
+            const dataLog = document.getElementById('dataLog');
+            
+            if (activityLog) {
+                activityLog.appendChild(logEntry.cloneNode(true));
+                activityLog.scrollTop = activityLog.scrollHeight;
+                
+                while (activityLog.children.length > 50) {
+                    activityLog.removeChild(activityLog.firstChild);
+                }
+            }
+            
+            if (dataLog) {
+                dataLog.appendChild(logEntry.cloneNode(true));
+                dataLog.scrollTop = dataLog.scrollHeight;
+                
+                while (dataLog.children.length > 50) {
+                    dataLog.removeChild(dataLog.firstChild);
+                }
+            }
+        }
+
+        function startStatusCheck() {
+            setInterval(async () => {
+                try {
+                    const response = await fetch(`${config.apiUrl}/api/health`);
+                    if (response.ok) {
+                        const health = await response.json();
+                        if (health.activeConnections > 0) {
+                            updateStatus(true);
+                        } else if (dataRecords.length === 0) {
+                            updateStatus(false);
+                        }
+                    }
+                } catch (error) {
+                    console.log('Status check failed:', error.message);
+                }
+            }, 5000);
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (socket) {
+                socket.close();
+            }
+            // Stop IP auto-refresh
+            stopIPAutoRefresh();
+        });
+
+        // Tracking History functionality
+        async function loadTrackingHistory() {
+            try {
+                log('info', 'Loading tracking history...');
+                const response = await fetch(`${config.apiUrl}/api/data`);
+                const data = await response.json();
+                const records = data.records || data || [];
+                
+                updateHistoryStats(records);
+                updateHistoryTable(records);
+                log('success', `Loaded ${records.length} tracking records`);
+            } catch (error) {
+                log('error', `Error loading tracking history: ${error.message}`);
+            }
+        }
+
+        function updateHistoryStats(data) {
+            const totalRecords = data.length;
+            const totalDevices = new Set(data.map(record => record.deviceId)).size;
+            const avgSpeed = data.length > 0 ? 
+                (data.reduce((sum, record) => sum + (record.speed || 0), 0) / data.length).toFixed(1) : 0;
+            
+            const dates = data.map(record => new Date(record.timestamp));
+            const dateRange = dates.length > 0 ? 
+                `${new Date(Math.min(...dates)).toLocaleDateString()} - ${new Date(Math.max(...dates)).toLocaleDateString()}` : '-';
+            
+            document.getElementById('totalRecords').textContent = totalRecords;
+            document.getElementById('totalDevices').textContent = totalDevices;
+            document.getElementById('dateRange').textContent = dateRange;
+            document.getElementById('avgSpeed').textContent = avgSpeed;
+        }
+
+        function updateHistoryTable(data) {
+            const tableDiv = document.getElementById('trackingHistoryTable');
+            if (data.length === 0) {
+                tableDiv.innerHTML = '<div class="no-data">No tracking records found</div>';
+                return;
+            }
+            
+            const table = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Device</th>
+                            <th>Time</th>
+                            <th>Location</th>
+                            <th>Speed</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.slice(0, 20).map(record => {
+                            // Get device datetime from tags, fallback to record.datetime, then record.timestamp
+                            let deviceTimestamp = record.timestamp;
+                            if (record.tags && record.tags['0x20'] && record.tags['0x20'].value) {
+                                deviceTimestamp = record.tags['0x20'].value;
+                            } else if (record.datetime) {
+                                deviceTimestamp = record.datetime;
+                            }
+                            
+                            // Convert to selected timezone for display
+                            const timezone = document.getElementById('historyTimezone')?.value || 'UTC';
+                            const convertedDate = convertToTimezone(new Date(deviceTimestamp), timezone);
+                            
+                            return `
+                                <tr>
+                                    <td>${record.deviceId || record.imei || 'Unknown'}</td>
+                                    <td>${convertedDate.toLocaleString()}</td>
+                                    <td>${record.latitude ? `${record.latitude.toFixed(6)}, ${record.longitude.toFixed(6)}` : 'N/A'}</td>
+                                    <td>${record.speed ? `${record.speed.toFixed(1)} km/h` : 'N/A'}</td>
+                                    <td>${record.status || 'Active'}</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+            tableDiv.innerHTML = table;
+        }
+
+        async function exportTrackingHistory() {
+            try {
+                log('info', 'Exporting tracking history...');
+                const response = await fetch(`${config.apiUrl}/api/data`);
+                const data = await response.json();
+                const records = data.records || data || [];
+                
+                const csv = convertToCSV(records);
+                downloadFile(csv, 'tracking-history.csv', 'text/csv');
+                log('success', `Tracking history exported successfully: ${records.length} records`);
+            } catch (error) {
+                log('error', `Error exporting tracking history: ${error.message}`);
+            }
+        }
+
+        async function clearTrackingHistory() {
+            if (confirm('Are you sure you want to clear all tracking history? This action cannot be undone.')) {
+                try {
+                    log('info', 'Clearing tracking history...');
+                    const response = await fetch(`${config.apiUrl}/api/data/clear`, { method: 'POST' });
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        log('success', 'Tracking history cleared successfully');
+                        loadTrackingHistory();
+                    } else {
+                        log('error', 'Failed to clear tracking history');
+                    }
+                } catch (error) {
+                    log('error', `Error clearing tracking history: ${error.message}`);
+                }
+            }
+        }
+
+        // Load devices for export tabs
+        async function loadExportDevices() {
+            try {
+                const response = await fetch(`${config.apiUrl}/api/devices`);
+                const devices = await response.json();
+                
+                // Populate device filter for Data Export tab
+                const exportDeviceFilter = document.getElementById('exportDeviceFilter');
+                if (exportDeviceFilter) {
+                    exportDeviceFilter.innerHTML = '<option value="all">All Devices</option>';
+                    devices.forEach(device => {
+                        const deviceName = deviceConfigs[device.deviceId || device.imei]?.name || device.deviceId || device.imei;
+                        exportDeviceFilter.innerHTML += `<option value="${device.deviceId || device.imei}">${deviceName}</option>`;
+                    });
+                }
+                
+                // Populate device filter for Data SM tab
+                const smDeviceFilter = document.getElementById('smDeviceFilter');
+                if (smDeviceFilter) {
+                    smDeviceFilter.innerHTML = '<option value="all">All Devices</option>';
+                    devices.forEach(device => {
+                        const deviceName = deviceConfigs[device.deviceId || device.imei]?.name || device.deviceId || device.imei;
+                        smDeviceFilter.innerHTML += `<option value="${device.deviceId || device.imei}">${deviceName}</option>`;
+                    });
+                }
+                
+                // Populate device filter for Tracking History tab
+                const historyDeviceFilter = document.getElementById('historyDeviceFilter');
+                if (historyDeviceFilter) {
+                    historyDeviceFilter.innerHTML = '<option value="all">All Devices</option>';
+                    devices.forEach(device => {
+                        const deviceName = deviceConfigs[device.deviceId || device.imei]?.name || device.deviceId || device.imei;
+                        historyDeviceFilter.innerHTML += `<option value="${device.deviceId || device.imei}">${deviceName}</option>`;
+                    });
+                }
+                
+                // Populate device filter for SM EXPORT tab
+                const smExportDeviceFilter = document.getElementById('smExportDeviceFilter');
+                if (smExportDeviceFilter) {
+                    smExportDeviceFilter.innerHTML = '<option value="all">All Devices</option>';
+                    devices.forEach(device => {
+                        const deviceName = deviceConfigs[device.deviceId || device.imei]?.name || device.deviceId || device.imei;
+                        smExportDeviceFilter.innerHTML += `<option value="${device.deviceId || device.imei}">${deviceName}</option>`;
+                    });
+                }
+                
+                log('success', `Loaded ${devices.length} devices for export tabs and tracking history`);
+            } catch (error) {
+                log('error', `Error loading devices for export: ${error.message}`);
+            }
+        }
+
+        // Data Export functionality
+        async function exportAllData() {
+            try {
+                log('info', 'Exporting all data...');
+                const response = await fetch(`${config.apiUrl}/api/data`);
+                const data = await response.json();
+                
+                // Extract records from the response
+                const records = data.records || data || [];
+                
+                const format = document.getElementById('exportFormat').value;
+                if (format === 'csv') {
+                    const csv = convertToCSV(records);
+                    downloadFile(csv, 'all-data.csv', 'text/csv');
+                } else {
+                    downloadFile(JSON.stringify(records, null, 2), 'all-data.json', 'application/json');
+                }
+                log('success', `All data exported successfully: ${records.length} records`);
+            } catch (error) {
+                log('error', `Error exporting all data: ${error.message}`);
+            }
+        }
+
+        async function exportDeviceData() {
+            try {
+                log('info', 'Exporting device data...');
+                const response = await fetch(`${config.apiUrl}/api/devices`);
+                const data = await response.json();
+                
+                const format = document.getElementById('exportFormat').value;
+                if (format === 'csv') {
+                    const csv = convertToCSV(data);
+                    downloadFile(csv, 'device-data.csv', 'text/csv');
+                } else {
+                    downloadFile(JSON.stringify(data, null, 2), 'device-data.json', 'application/json');
+                }
+                log('success', 'Device data exported successfully');
+            } catch (error) {
+                log('error', `Error exporting device data: ${error.message}`);
+            }
+        }
+
+        async function exportTrackingData() {
+            try {
+                log('info', 'Exporting tracking data...');
+                const startDate = document.getElementById('exportStartDate').value;
+                const endDate = document.getElementById('exportEndDate').value;
+                const deviceFilter = document.getElementById('exportDeviceFilter').value;
+                
+                // Get all data first
+                const response = await fetch(`${config.apiUrl}/api/data`);
+                const data = await response.json();
+                const records = data.records || data || [];
+                
+                // Filter by date range if specified
+                let filteredData = records;
+                if (startDate && endDate) {
+                    const timezone = document.getElementById('exportTimezone')?.value || 'UTC';
+                    filteredData = records.filter(record => {
+                        // Get device datetime from tags, fallback to record.datetime, then record.timestamp
+                        let deviceTimestamp = record.timestamp;
+                        if (record.tags && record.tags['0x20'] && record.tags['0x20'].value) {
+                            deviceTimestamp = record.tags['0x20'].value;
+                        } else if (record.datetime) {
+                            deviceTimestamp = record.datetime;
+                        }
+                        
+                        // Convert device datetime to specified timezone for comparison
+                        const deviceDate = convertToTimezone(new Date(deviceTimestamp), timezone);
+                        const start = new Date(startDate);
+                        const end = new Date(endDate);
+                        return deviceDate >= start && deviceDate <= end;
+                    });
+                }
+                
+                // Filter by device if specified
+                if (deviceFilter !== 'all') {
+                    filteredData = filteredData.filter(record => record.deviceId === deviceFilter);
+                }
+                
+                const format = document.getElementById('exportFormat').value;
+                if (format === 'csv') {
+                    const csv = convertToCSV(filteredData);
+                    downloadFile(csv, 'tracking-data.csv', 'text/csv');
+                } else {
+                    downloadFile(JSON.stringify(filteredData, null, 2), 'tracking-data.json', 'application/json');
+                }
+                log('success', `Tracking data exported successfully: ${filteredData.length} records`);
+            } catch (error) {
+                log('error', `Error exporting tracking data: ${error.message}`);
+            }
+        }
+
+        async function exportSettings() {
+            try {
+                log('info', 'Exporting settings...');
+                const settings = {
+                    peers: peers,
+                    config: config,
+                    exportTime: new Date().toISOString()
+                };
+                
+                downloadFile(JSON.stringify(settings, null, 2), 'settings.json', 'application/json');
+                log('success', 'Settings exported successfully');
+            } catch (error) {
+                log('error', `Error exporting settings: ${error.message}`);
+            }
+        }
+
+        // Timezone conversion function
+        function convertToTimezone(date, timezone) {
+            try {
+                // Create a new date object to avoid modifying the original
+                const utcDate = new Date(date);
+                
+                // If timezone is UTC, return as is
+                if (timezone === 'UTC') {
+                    return utcDate;
+                }
+                
+                // For other timezones, we'll use a simple offset approach
+                // This is a simplified implementation - for production, consider using a library like moment-timezone
+                const timezoneOffsets = {
+                    'UTC+7': 7 * 60, // WIB (Western Indonesian Time)
+                    'UTC+8': 8 * 60, // WITA (Central Indonesian Time)
+                    'UTC+9': 9 * 60, // WIT (Eastern Indonesian Time)
+                    'UTC+5:30': 5.5 * 60, // IST (Indian Standard Time)
+                    'UTC+8:00': 8 * 60, // China Standard Time
+                    'UTC+9:00': 9 * 60, // Japan Standard Time
+                    'UTC-5': -5 * 60, // EST (Eastern Standard Time)
+                    'UTC-8': -8 * 60, // PST (Pacific Standard Time)
+                    'UTC+0': 0, // GMT
+                    'UTC+1': 1 * 60, // CET (Central European Time)
+                    'UTC+2': 2 * 60, // EET (Eastern European Time)
+                    'UTC+3': 3 * 60, // MSK (Moscow Time)
+                    'UTC+4': 4 * 60, // GST (Gulf Standard Time)
+                    'UTC+5': 5 * 60, // PKT (Pakistan Standard Time)
+                    'UTC+6': 6 * 60, // BST (Bangladesh Standard Time)
+                    'UTC+10': 10 * 60, // AEST (Australian Eastern Standard Time)
+                    'UTC+11': 11 * 60, // AEDT (Australian Eastern Daylight Time)
+                    'UTC+12': 12 * 60, // NZST (New Zealand Standard Time)
+                };
+                
+                const offset = timezoneOffsets[timezone];
+                if (offset !== undefined) {
+                    // Convert to the target timezone
+                    const targetTime = new Date(utcDate.getTime() + (offset * 60 * 1000));
+                    return targetTime;
+                }
+                
+                // If timezone not found, return UTC
+                return utcDate;
+            } catch (error) {
+                console.error('Error converting timezone:', error);
+                return date;
+            }
+        }
+
+        function convertToCSV(data) {
+            if (data.length === 0) return '';
+            
+            // Flatten the data for export
+            const flattenedData = data.map(record => {
+                // Get device datetime from tags, fallback to record.datetime, then record.timestamp
+                let deviceTimestamp = record.timestamp;
+                if (record.tags && record.tags['0x20'] && record.tags['0x20'].value) {
+                    deviceTimestamp = record.tags['0x20'].value;
+                } else if (record.datetime) {
+                    deviceTimestamp = record.datetime;
+                }
+                
+                // Convert to selected timezone for export
+                const timezone = document.getElementById('exportTimezone')?.value || 'UTC';
+                const convertedTimestamp = convertToTimezone(new Date(deviceTimestamp), timezone);
+                
+                const flatRecord = {
+                    timestamp: convertedTimestamp.toISOString(),
+                    deviceId: record.deviceId || '',
+                    imei: record.imei || '',
+                    clientAddress: record.clientAddress || '',
+                    recordIndex: record.recordIndex || '',
+                    latitude: record.latitude || '',
+                    longitude: record.longitude || '',
+                    satellites: record.satellites || '',
+                    correctness: record.correctness || '',
+                    speed: record.speed || '',
+                    direction: record.direction || '',
+                    height: record.height || '',
+                    hdop: record.hdop || '',
+                    status: record.status || '',
+                    supplyVoltage: record.supplyVoltage || '',
+                    batteryVoltage: record.batteryVoltage || '',
+                    temperature: record.temperature || '',
+                    outputs: record.outputs || '',
+                    inputs: record.inputs || '',
+                    inputVoltage0: record.inputVoltage0 || '',
+                    inputVoltage1: record.inputVoltage1 || '',
+                    inputVoltage2: record.inputVoltage2 || '',
+                    inputVoltage3: record.inputVoltage3 || '',
+                    inputVoltage4: record.inputVoltage4 || '',
+                    inputVoltage5: record.inputVoltage5 || '',
+                    userData0: record.userData0 || '',
+                    userData1: record.userData1 || '',
+                    userData2: record.userData2 || '',
+                    modbus0: record.modbus0 || '',
+                    modbus1: record.modbus1 || '',
+                    archiveNumber: record.archiveNumber || '',
+                    datetime: record.datetime || '',
+                    milliseconds: record.milliseconds || ''
+                };
+                
+                // Extract values from tags if they exist
+                if (record.tags && typeof record.tags === 'object') {
+                    // Extract specific tag values
+                    if (record.tags['0x30'] && record.tags['0x30'].value) {
+                        const coords = record.tags['0x30'].value;
+                        flatRecord.latitude = coords.latitude || flatRecord.latitude;
+                        flatRecord.longitude = coords.longitude || flatRecord.longitude;
+                        flatRecord.satellites = coords.satellites || flatRecord.satellites;
+                        flatRecord.correctness = coords.correctness || flatRecord.correctness;
+                    }
+                    
+                    if (record.tags['0x33'] && record.tags['0x33'].value) {
+                        const speedDir = record.tags['0x33'].value;
+                        flatRecord.speed = speedDir.speed || flatRecord.speed;
+                        flatRecord.direction = speedDir.direction || flatRecord.direction;
+                    }
+                    
+                    if (record.tags['0x34']) {
+                        flatRecord.height = record.tags['0x34'].value || flatRecord.height;
+                    }
+                    
+                    if (record.tags['0x35']) {
+                        flatRecord.hdop = record.tags['0x35'].value || flatRecord.hdop;
+                    }
+                    
+                    if (record.tags['0x40']) {
+                        flatRecord.status = record.tags['0x40'].value || flatRecord.status;
+                    }
+                    
+                    if (record.tags['0x41']) {
+                        flatRecord.supplyVoltage = record.tags['0x41'].value || flatRecord.supplyVoltage;
+                    }
+                    
+                    if (record.tags['0x42']) {
+                        flatRecord.batteryVoltage = record.tags['0x42'].value || flatRecord.batteryVoltage;
+                    }
+                    
+                    if (record.tags['0xe2']) {
+                        flatRecord.userData0 = record.tags['0xe2'].value || flatRecord.userData0;
+                    }
+                    
+                    if (record.tags['0xe3']) {
+                        flatRecord.userData1 = record.tags['0xe3'].value || flatRecord.userData1;
+                    }
+                    
+                    if (record.tags['0xe4']) {
+                        flatRecord.userData2 = record.tags['0xe4'].value || flatRecord.userData2;
+                    }
+                    
+                    if (record.tags['0x0001']) {
+                        flatRecord.modbus0 = record.tags['0x0001'].value || flatRecord.modbus0;
+                    }
+                }
+                
+                return flatRecord;
+            });
+            
+            const headers = Object.keys(flattenedData[0]);
+            const csvRows = [headers.join(',')];
+            
+            for (const row of flattenedData) {
+                const values = headers.map(header => {
+                    const value = row[header];
+                    if (value === null || value === undefined) {
+                        return '';
+                    }
+                    return value.toString();
+                });
+                csvRows.push(values.join(','));
+            }
+            
+            return csvRows.join('\n');
+        }
+
+        function convertDataSMToCSV(data) {
+            if (data.length === 0) return '';
+            
+            // Define the specific headers for Data SM
+            const headers = [
+                'Name',
+                'IMEI', 
+                'Timestamp',
+                'Lat',
+                'Lon',
+                'Speed',
+                'Alt',
+                'Satellite',
+                'Sensor Kiri',
+                'Sensor Kanan',
+                'Sensor Serial ( Ultrasonic )',
+                'Uptime Seconds'
+            ];
+            
+            const csvRows = [headers.join(',')];
+            
+            for (const row of data) {
+                const values = headers.map(header => {
+                    const value = row[header];
+                    if (value === null || value === undefined) {
+                        return '';
+                    }
+                    return value.toString();
+                });
+                csvRows.push(values.join(','));
+            }
+            
+            return csvRows.join('\n');
+        }
+
+        function downloadFile(content, filename, contentType) {
+            const blob = new Blob([content], { type: contentType });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Enhanced showTab function to load data for specific tabs
+        function showTab(tabName) {
+            // Stop IP auto-refresh if switching away from device management
+            if (document.getElementById('device-management').classList.contains('active')) {
+                stopIPAutoRefresh();
+            }
+            
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            // Refresh map if needed
+            if (tabName === 'tracking' && map) {
+                setTimeout(() => map.invalidateSize(), 100);
+            }
+
+            // Load data for specific tabs
+            if (tabName === 'tracking-history') {
+                loadTrackingHistory();
+            } else if (tabName === 'data-management') {
+                loadStats();
+                loadStorageInfo();
+            } else if (tabName === 'peer-sync') {
+                // Refresh peer list
+                updatePeerList();
+                         } else if (tabName === 'device-management') {
+                 loadDevices();
+                 loadDeviceGroups();
+                 loadServerInfo();
+                 startIPAutoRefresh(); // Start auto-refresh when device management tab is opened
+             } else if (tabName === 'data-export') {
+                loadExportDevices();
+            } else if (tabName === 'data-sm') {
+                loadExportDevices();
+                loadDataSMHistory();
+            } else if (tabName === 'sm-export') {
+                loadExportDevices();
+                loadSMExportHistory();
+            } else if (tabName === 'device-commands') {
+                // Load device commands tab content
+                loadDeviceCommands();
+            }
+        }
+
+        // Device Management Functions
+        async function loadDevices() {
+            try {
+                log('info', 'Loading devices...', 'deviceManagementLog');
+                const response = await fetch('/api/devices');
+                const devices = await response.json();
+                
+                const container = document.getElementById('deviceManagementList');
+                if (devices.length === 0) {
+                    container.innerHTML = '<div class="no-data">No devices found</div>';
+                    return;
+                }
+                
+                let html = '<table class="data-table"><thead><tr><th>IMEI</th><th>Name</th><th>Group</th><th>Actions</th></tr></thead><tbody>';
+                
+                devices.forEach(device => {
+                    const config = deviceConfigs[device.imei] || {};
+                    html += `
+                        <tr>
+                            <td>${device.imei}</td>
+                            <td><input type="text" value="${config.name || ''}" onchange="updateDeviceConfig('${device.imei}', 'name', this.value)" placeholder="Device Name"></td>
+                            <td>
+                                <select onchange="updateDeviceConfig('${device.imei}', 'group', this.value)">
+                                    <option value="">No Group</option>
+                                    ${deviceGroups.map(group => `<option value="${group}" ${config.group === group ? 'selected' : ''}>${group}</option>`).join('')}
+                                </select>
+                            </td>
+                            <td>
+                                <button onclick="viewDeviceDetails('${device.imei}')" class="btn btn-sm btn-info">View</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+                container.innerHTML = html;
+                log('success', `Loaded ${devices.length} devices`, 'deviceManagementLog');
+            } catch (error) {
+                log('error', `Error loading devices: ${error.message}`, 'deviceManagementLog');
+            }
+        }
+
+        function loadDeviceGroups() {
+            const container = document.getElementById('deviceGroups');
+            if (deviceGroups.length === 0) {
+                container.innerHTML = '<div class="no-data">No device groups created</div>';
+                return;
+            }
+            
+            let html = '<table class="data-table"><thead><tr><th>Group Name</th><th>Device Count</th><th>Actions</th></tr></thead><tbody>';
+            
+            deviceGroups.forEach(group => {
+                const deviceCount = Object.values(deviceConfigs).filter(config => config.group === group).length;
+                html += `
+                    <tr>
+                        <td>${group}</td>
+                        <td>${deviceCount}</td>
+                        <td>
+                            <button onclick="removeGroup('${group}')" class="btn btn-sm btn-danger">Remove</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function addGroup() {
+            const groupName = document.getElementById('newGroupName').value.trim();
+            if (!groupName) {
+                log('error', 'Please enter a group name', 'deviceManagementLog');
+                return;
+            }
+            
+            if (deviceGroups.includes(groupName)) {
+                log('error', 'Group already exists', 'deviceManagementLog');
+                return;
+            }
+            
+            deviceGroups.push(groupName);
+            localStorage.setItem('deviceGroups', JSON.stringify(deviceGroups));
+            document.getElementById('newGroupName').value = '';
+            loadDeviceGroups();
+            log('success', `Group "${groupName}" added successfully`, 'deviceManagementLog');
+        }
+
+        function removeGroup(groupName) {
+            if (confirm(`Are you sure you want to remove group "${groupName}"?`)) {
+                deviceGroups = deviceGroups.filter(group => group !== groupName);
+                localStorage.setItem('deviceGroups', JSON.stringify(deviceGroups));
+                
+                // Remove group from device configs
+                Object.keys(deviceConfigs).forEach(imei => {
+                    if (deviceConfigs[imei].group === groupName) {
+                        deviceConfigs[imei].group = '';
+                    }
+                });
+                localStorage.setItem('deviceConfigs', JSON.stringify(deviceConfigs));
+                
+                loadDeviceGroups();
+                loadDevices();
+                log('success', `Group "${groupName}" removed successfully`, 'deviceManagementLog');
+            }
+        }
+
+        function updateDeviceConfig(imei, field, value) {
+            if (!deviceConfigs[imei]) {
+                deviceConfigs[imei] = {};
+            }
+            deviceConfigs[imei][field] = value;
+            localStorage.setItem('deviceConfigs', JSON.stringify(deviceConfigs));
+            log('info', `Updated ${field} for device ${imei}`, 'deviceManagementLog');
+        }
+
+        function saveDeviceChanges() {
+            localStorage.setItem('deviceConfigs', JSON.stringify(deviceConfigs));
+            localStorage.setItem('deviceGroups', JSON.stringify(deviceGroups));
+            log('success', 'Device changes saved successfully', 'deviceManagementLog');
+        }
+
+        function exportDeviceConfig() {
+            const config = {
+                deviceGroups: deviceGroups,
+                deviceConfigs: deviceConfigs,
+                exportTime: new Date().toISOString()
+            };
+            downloadFile(JSON.stringify(config, null, 2), 'device-config.json', 'application/json');
+            log('success', 'Device configuration exported', 'deviceManagementLog');
+        }
+
+                 function viewDeviceDetails(imei) {
+             log('info', `Viewing details for device ${imei}`, 'deviceManagementLog');
+             // TODO: Implement detailed device view
+         }
+
+         // Server IP detection and display with auto-refresh
+        let ipUpdateInterval = null;
+        
+        async function loadServerInfo() {
+            try {
+                // Show loading state
+                document.getElementById('serverIP').innerHTML = '<span style="color: #007bff;">🔄 Updating...</span>';
+                document.getElementById('serverURL').textContent = 'Updating...';
+                
+                // Get server IP from current location
+                const serverIP = window.location.hostname;
+                const serverPort = window.location.port || '3001';
+                const serverURL = `${window.location.protocol}//${serverIP}:${serverPort}`;
+                
+                // Try to get actual IP addresses
+                let actualIP = serverIP;
+                let externalIP = null;
+                
+                // First try to get local network IP from server API
+                try {
+                    const response = await fetch(`${config.apiUrl}/api/network-info`);
+                    if (response.ok) {
+                        const networkInfo = await response.json();
+                        if (networkInfo.localIP && networkInfo.localIP !== 'localhost' && networkInfo.localIP !== '127.0.0.1') {
+                            actualIP = networkInfo.localIP;
+                        }
+                    }
+                } catch (error) {
+                    console.log('Server network info not available:', error.message);
+                }
+                
+                // If still localhost, try to get external IP
+                if (actualIP === 'localhost' || actualIP === '127.0.0.1') {
+                    try {
+                        const response = await fetch('https://api.ipify.org?format=json');
+                        if (response.ok) {
+                            const data = await response.json();
+                            externalIP = data.ip;
+                            // Don't use external IP as primary, but show it as secondary
+                        }
+                    } catch (extError) {
+                        console.log('External IP detection failed:', extError.message);
+                    }
+                }
+                
+                // Update the display with actual IP
+                if (actualIP !== 'localhost' && actualIP !== '127.0.0.1') {
+                    document.getElementById('serverIP').innerHTML = `
+                        <span title="Local Network IP">${actualIP}</span>
+                        <span style="color: #28a745; margin-left: 5px;" title="Last updated: ${new Date().toLocaleTimeString()}">✓</span>
+                    `;
+                    document.getElementById('serverURL').textContent = `${window.location.protocol}//${actualIP}:${serverPort}`;
+                } else {
+                    // If we can't get a real IP, show localhost but with a note
+                    document.getElementById('serverIP').innerHTML = `
+                        <span title="Local Development">${serverIP}</span><br>
+                        <span style="color: #666; font-size: 0.8em;">(Local development mode)</span>
+                        <span style="color: #28a745; margin-left: 5px;" title="Last updated: ${new Date().toLocaleTimeString()}">✓</span>
+                    `;
+                    document.getElementById('serverURL').textContent = serverURL;
+                }
+                
+                // Show external IP if available and different
+                if (externalIP && externalIP !== actualIP && actualIP !== 'localhost' && actualIP !== '127.0.0.1') {
+                    document.getElementById('serverIP').innerHTML = `
+                        <span title="Local Network IP">${actualIP}</span><br>
+                        <span style="color: #666; font-size: 0.8em;" title="External IP">External: ${externalIP}</span>
+                        <span style="color: #28a745; margin-left: 5px;" title="Last updated: ${new Date().toLocaleTimeString()}">✓</span>
+                    `;
+                }
+                
+                document.getElementById('serverPort').textContent = serverPort;
+                
+                log('info', `Server info updated: ${actualIP}:${serverPort}`, 'deviceManagementLog');
+            } catch (error) {
+                log('error', `Error loading server info: ${error.message}`, 'deviceManagementLog');
+                document.getElementById('serverIP').innerHTML = `
+                    <span style="color: #dc3545;">Error loading IP</span>
+                    <span style="color: #dc3545; margin-left: 5px;" title="Last updated: ${new Date().toLocaleTimeString()}">✗</span>
+                `;
+                document.getElementById('serverURL').textContent = 'Error loading URL';
+            }
+        }
+        
+        function startIPAutoRefresh() {
+            // Clear existing interval
+            if (ipUpdateInterval) {
+                clearInterval(ipUpdateInterval);
+            }
+            
+            // Update every 30 seconds
+            ipUpdateInterval = setInterval(() => {
+                loadServerInfo();
+            }, 30000); // 30 seconds
+            
+            // Update button states
+            document.getElementById('startAutoRefreshBtn').style.display = 'none';
+            document.getElementById('stopAutoRefreshBtn').style.display = 'inline-block';
+            
+            log('info', 'IP auto-refresh started (30s interval)', 'deviceManagementLog');
+        }
+        
+        function stopIPAutoRefresh() {
+            if (ipUpdateInterval) {
+                clearInterval(ipUpdateInterval);
+                ipUpdateInterval = null;
+                
+                // Update button states
+                document.getElementById('startAutoRefreshBtn').style.display = 'inline-block';
+                document.getElementById('stopAutoRefreshBtn').style.display = 'none';
+                
+                log('info', 'IP auto-refresh stopped', 'deviceManagementLog');
+            }
+        }
+        
+        function refreshServerInfo() {
+            loadServerInfo();
+            log('info', 'Manual IP refresh triggered', 'deviceManagementLog');
+        }
+
+         function copyServerURL() {
+             const serverURL = document.getElementById('serverURL').textContent;
+             if (serverURL && serverURL !== 'Loading...' && serverURL !== 'Error loading URL') {
+                 navigator.clipboard.writeText(serverURL).then(() => {
+                     log('success', 'Server URL copied to clipboard', 'deviceManagementLog');
+                     
+                     // Show temporary success message
+                     const copyBtn = event.target;
+                     const originalText = copyBtn.textContent;
+                     copyBtn.textContent = '✅ Copied!';
+                     copyBtn.style.background = '#28a745';
+                     
+                     setTimeout(() => {
+                         copyBtn.textContent = originalText;
+                         copyBtn.style.background = '';
+                     }, 2000);
+                 }).catch(err => {
+                     log('error', 'Failed to copy URL to clipboard', 'deviceManagementLog');
+                 });
+             } else {
+                 log('warning', 'No valid server URL to copy', 'deviceManagementLog');
+             }
+         }
+
+        // Data SM Functions
+        async function exportDataSM() {
+            try {
+                log('info', 'Exporting Data SM...', 'dataSMLog');
+                
+                const startDate = document.getElementById('smStartDate').value;
+                const endDate = document.getElementById('smEndDate').value;
+                const deviceFilter = document.getElementById('smDeviceFilter').value;
+                const fileTemplate = document.getElementById('smFileTemplate').value;
+                
+                if (!startDate || !endDate) {
+                    log('error', 'Please select start and end dates', 'dataSMLog');
+                    return;
+                }
+                
+                // Get all data first
+                const response = await fetch(`${config.apiUrl}/api/data`);
+                const data = await response.json();
+                const records = data.records || data || [];
+                
+                // Filter by date range using device datetime
+                const timezone = document.getElementById('smTimezone')?.value || 'UTC';
+                let filteredData = records.filter(record => {
+                    // Get device datetime from tags, fallback to record.datetime, then record.timestamp
+                    let deviceTimestamp = record.timestamp;
+                    if (record.tags && record.tags['0x20'] && record.tags['0x20'].value) {
+                        deviceTimestamp = record.tags['0x20'].value;
+                    } else if (record.datetime) {
+                        deviceTimestamp = record.datetime;
+                    }
+                    
+                    // Convert device datetime to specified timezone for comparison
+                    const deviceDate = convertToTimezone(new Date(deviceTimestamp), timezone);
+                    const start = new Date(startDate);
+                    const end = new Date(endDate);
+                    return deviceDate >= start && deviceDate <= end;
+                });
+                
+                // Filter by device if specified
+                if (deviceFilter !== 'all') {
+                    filteredData = filteredData.filter(record => record.deviceId === deviceFilter);
+                }
+                
+                if (filteredData.length === 0) {
+                    log('warning', 'No data found for the selected date range and device filter', 'dataSMLog');
+                    return;
+                }
+                
+                // Transform data to SM format with proper tag extraction
+                const smData = filteredData.map(record => {
+                    // Extract values from tags if they exist
+                    let lat = record.latitude || '';
+                    let lon = record.longitude || '';
+                    let speed = record.speed || '';
+                    let altitude = record.height || '';
+                    let satellites = record.satellites || '';
+                    let userData0 = record.userData0 || '';
+                    let userData1 = record.userData1 || '';
+                    let userData2 = record.userData2 || '';
+                    let modbus0 = record.modbus0 || '';
+                    
+                    if (record.tags && typeof record.tags === 'object') {
+                        // Extract coordinates
+                        if (record.tags['0x30'] && record.tags['0x30'].value) {
+                            const coords = record.tags['0x30'].value;
+                            lat = coords.latitude || lat;
+                            lon = coords.longitude || lon;
+                            satellites = coords.satellites || satellites;
+                        }
+                        
+                        // Extract speed and direction
+                        if (record.tags['0x33'] && record.tags['0x33'].value) {
+                            const speedDir = record.tags['0x33'].value;
+                            speed = speedDir.speed || speed;
+                        }
+                        
+                        // Extract height/altitude
+                        if (record.tags['0x34']) {
+                            altitude = record.tags['0x34'].value || altitude;
+                        }
+                        
+                        // Extract user data
+                        if (record.tags['0xe2']) {
+                            userData0 = record.tags['0xe2'].value || userData0;
+                        }
+                        
+                        if (record.tags['0xe3']) {
+                            userData1 = record.tags['0xe3'].value || userData1;
+                        }
+                        
+                        if (record.tags['0xe4']) {
+                            userData2 = record.tags['0xe4'].value || userData2;
+                        }
+                        
+                        // Extract modbus data
+                        if (record.tags['0x0001']) {
+                            modbus0 = record.tags['0x0001'].value || modbus0;
+                        }
+                    }
+                    
+                    // Get device datetime from tags, fallback to record.datetime, then record.timestamp
+                    let deviceTimestamp = record.timestamp;
+                    if (record.tags && record.tags['0x20'] && record.tags['0x20'].value) {
+                        deviceTimestamp = record.tags['0x20'].value;
+                    } else if (record.datetime) {
+                        deviceTimestamp = record.datetime;
+                    }
+                    
+                    // Convert device datetime to specified timezone for export
+                    const timezone = document.getElementById('smTimezone')?.value || 'UTC';
+                    const convertedTimestamp = convertToTimezone(new Date(deviceTimestamp), timezone);
+                    
+                    return {
+                        Name: deviceConfigs[record.deviceId]?.name || record.deviceId,
+                        IMEI: record.deviceId,
+                        Timestamp: convertedTimestamp.toISOString(),
+                        Lat: lat,
+                        Lon: lon,
+                        Speed: speed,
+                        Alt: altitude,
+                        Satellite: satellites,
+                        'Sensor Kiri': userData0,
+                        'Sensor Kanan': userData1,
+                        'Sensor Serial ( Ultrasonic )': modbus0,
+                        'Uptime Seconds': userData2
+                    };
+                });
+                
+                // Generate filename
+                const date = new Date().toISOString().split('T')[0];
+                const filename = fileTemplate
+                    .replace('GroupName', deviceConfigs[filteredData[0]?.deviceId]?.group || 'Unknown')
+                    .replace('DeviceName', deviceConfigs[filteredData[0]?.deviceId]?.name || filteredData[0]?.deviceId || 'Unknown')
+                    .replace('YYYY-MM-DD', date);
+                
+                // Convert to CSV with custom headers for Data SM
+                const csv = convertDataSMToCSV(smData);
+                downloadFile(csv, filename, 'text/csv');
+                
+                // Update preview
+                updateDataSMPreview(smData);
+                
+                log('success', `Data SM exported: ${filename} with ${smData.length} records`, 'dataSMLog');
+            } catch (error) {
+                log('error', `Error exporting Data SM: ${error.message}`, 'dataSMLog');
+            }
+        }
+
+        function updateDataSMPreview(data) {
+            const container = document.getElementById('dataSMPreview');
+            if (data.length === 0) {
+                container.innerHTML = '<div class="no-data">No data to preview</div>';
+                return;
+            }
+            
+            let html = '<table class="data-table"><thead><tr>';
+            Object.keys(data[0]).forEach(key => {
+                html += `<th>${key}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+            
+            data.slice(0, 10).forEach(record => {
+                html += '<tr>';
+                Object.values(record).forEach(value => {
+                    html += `<td>${value || ''}</td>`;
+                });
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            if (data.length > 10) {
+                html += `<div class="preview-note">Showing first 10 of ${data.length} records</div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        function setupAutoExport() {
+            const frequency = document.getElementById('smAutoExport').value;
+            if (frequency === 'disabled') {
+                localStorage.removeItem('autoExportConfig');
+                log('info', 'Auto export disabled', 'dataSMLog');
+                return;
+            }
+            
+            const config = {
+                frequency: frequency,
+                nextExport: calculateNextExport(frequency),
+                enabled: true
+            };
+            
+            localStorage.setItem('autoExportConfig', JSON.stringify(config));
+            startAutoExportTimer();
+            log('success', `Auto export set to ${frequency}`, 'dataSMLog');
+        }
+
+        function calculateNextExport(frequency) {
+            const now = new Date();
+            if (frequency === 'daily') {
+                return new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0).getTime();
+            } else if (frequency === 'weekly') {
+                const daysUntilSunday = (7 - now.getDay()) % 7;
+                return new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysUntilSunday, 0, 0, 0).getTime();
+            }
+            return now.getTime();
+        }
+
+                 function startAutoExportTimer() {
+             const config = JSON.parse(localStorage.getItem('autoExportConfig') || '{}');
+             if (!config.enabled) return;
+             
+             const timeUntilNext = config.nextExport - Date.now();
+             if (timeUntilNext > 0) {
+                 setTimeout(() => {
+                     exportDataSM();
+                     setupAutoExport(); // Schedule next export
+                 }, timeUntilNext);
+             }
+         }
+
+         // Offline map utilities
+         async function checkOfflineMapAvailability() {
+             try {
+                 const response = await fetch('/tiles/0/0/0.png');
+                 if (response.ok) {
+                     log('success', 'Offline map tiles are available');
+                     return true;
+                 } else {
+                     log('warning', 'Offline map tiles not found. Please place map tiles in /tiles/ directory');
+                     return false;
+                 }
+             } catch (error) {
+                 log('warning', 'Offline map tiles not available. Using online maps as fallback');
+                 return false;
+             }
+         }
+
+         function showOfflineMapInstructions() {
+             const instructions = `
+                 <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 15px; margin: 10px 0;">
+                     <h4>📱 Offline Map Setup Instructions:</h4>
+                     <ol style="margin: 10px 0; padding-left: 20px;">
+                         <li>Create a <strong>/tiles/</strong> directory in your server root</li>
+                         <li>Download map tiles using tools like:
+                             <ul>
+                                 <li>TileMill or MapBox Studio</li>
+                                 <li>MOBAC (Mobile Atlas Creator)</li>
+                                 <li>TileDownloader scripts</li>
+                             </ul>
+                         </li>
+                         <li>Organize tiles in structure: <strong>/tiles/{z}/{x}/{y}.png</strong></li>
+                         <li>Ensure your server serves static files from /tiles/ directory</li>
+                     </ol>
+                     <p><strong>Note:</strong> Offline maps work best for specific regions to save storage space.</p>
+                 </div>
+             `;
+             
+             // Show instructions in a modal or info box
+             const infoBox = document.createElement('div');
+             infoBox.innerHTML = instructions;
+             infoBox.style.position = 'fixed';
+             infoBox.style.top = '50%';
+             infoBox.style.left = '50%';
+             infoBox.style.transform = 'translate(-50%, -50%)';
+             infoBox.style.zIndex = '1000';
+             infoBox.style.maxWidth = '500px';
+             infoBox.style.maxHeight = '80vh';
+             infoBox.style.overflow = 'auto';
+             infoBox.style.background = 'white';
+             infoBox.style.border = '2px solid #007bff';
+             infoBox.style.borderRadius = '8px';
+             infoBox.style.padding = '20px';
+             infoBox.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
+             
+             const closeBtn = document.createElement('button');
+             closeBtn.textContent = 'Close';
+             closeBtn.className = 'btn btn-primary';
+             closeBtn.style.marginTop = '15px';
+             closeBtn.onclick = () => document.body.removeChild(infoBox);
+             
+             infoBox.appendChild(closeBtn);
+             document.body.appendChild(infoBox);
+         }
+
+        function loadDataSMHistory() {
+            const history = JSON.parse(localStorage.getItem('dataSMHistory') || '[]');
+            const container = document.getElementById('dataSMLog');
+            
+            if (history.length === 0) {
+                container.innerHTML = '<div class="log-entry info">No export history available</div>';
+                return;
+            }
+            
+            let html = '';
+            history.slice(-10).forEach(entry => {
+                html += `<div class="log-entry ${entry.type}">[${entry.timestamp}] ${entry.message}</div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        // Tracking History Map Functions
+        let trackingHistoryMap = null;
+        let trackingHistoryMarkers = new Map();
+        let trackingHistoryLines = new Map();
+        let trackingHistoryData = [];
+
+                 function initializeTrackingHistoryMap() {
+             if (trackingHistoryMap) {
+                 trackingHistoryMap.remove();
+             }
+             
+             trackingHistoryMap = L.map('trackingHistoryMap').setView([0, 0], 2);
+             
+             // Get current map type and style from dropdowns
+             const mapType = document.getElementById('historyMapType')?.value || 'online';
+             const mapStyle = document.getElementById('historyMapStyle')?.value || 'default';
+             
+             currentHistoryMapLayer = getMapLayer(mapType, mapStyle);
+             currentHistoryMapLayer.addTo(trackingHistoryMap);
+         }
+
+        function filterTrackingHistory() {
+            const deviceFilter = document.getElementById('historyDeviceFilter').value;
+            const startDate = document.getElementById('historyStartDate').value;
+            const endDate = document.getElementById('historyEndDate').value;
+            const timezone = document.getElementById('historyTimezone')?.value || 'UTC';
+            
+            let filteredData = trackingHistoryData;
+            
+            // Filter by device
+            if (deviceFilter !== 'all') {
+                filteredData = filteredData.filter(record => record.deviceId === deviceFilter);
+            }
+            
+            // Filter by date range using device datetime instead of server timestamp
+            if (startDate || endDate) {
+                filteredData = filteredData.filter(record => {
+                    // Get device datetime from tags, fallback to record.datetime, then record.timestamp
+                    let deviceTimestamp = record.timestamp;
+                    if (record.tags && record.tags['0x20'] && record.tags['0x20'].value) {
+                        deviceTimestamp = record.tags['0x20'].value;
+                    } else if (record.datetime) {
+                        deviceTimestamp = record.datetime;
+                    }
+                    
+                    // Convert device datetime to specified timezone for comparison
+                    const deviceDate = convertToTimezone(new Date(deviceTimestamp), timezone);
+                    
+                    if (startDate && deviceDate < new Date(startDate)) {
+                        return false;
+                    }
+                    if (endDate && deviceDate > new Date(endDate)) {
+                        return false;
+                    }
+                    return true;
+                });
+            }
+            
+            updateTrackingHistoryMap(filteredData);
+            updateHistoryStats(filteredData);
+            updateHistoryTable(filteredData);
+        }
+
+        function updateTrackingHistoryMap(data) {
+            if (!trackingHistoryMap) {
+                initializeTrackingHistoryMap();
+            }
+            
+            // Clear existing markers and lines
+            trackingHistoryMarkers.forEach(marker => trackingHistoryMap.removeLayer(marker));
+            trackingHistoryLines.forEach(line => trackingHistoryMap.removeLayer(line));
+            trackingHistoryMarkers.clear();
+            trackingHistoryLines.clear();
+            
+            if (data.length === 0) {
+                log('info', 'No tracking data to display on map', 'historyLog');
+                return;
+            }
+            
+            // Group data by device
+            const deviceGroups = {};
+            data.forEach(record => {
+                const deviceId = record.deviceId || record.imei || 'unknown';
+                if (!deviceGroups[deviceId]) {
+                    deviceGroups[deviceId] = [];
+                }
+                deviceGroups[deviceId].push(record);
+            });
+            
+            // Create markers and lines for each device
+            Object.entries(deviceGroups).forEach(([deviceId, records]) => {
+                const deviceName = deviceConfigs[deviceId]?.name || deviceId;
+                const deviceColor = getDeviceColor(deviceId);
+                
+                // Sort records by timestamp
+                records.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                
+                // Create tracking line
+                const linePoints = records
+                    .filter(record => record.latitude && record.longitude)
+                    .map(record => [record.latitude, record.longitude]);
+                
+                if (linePoints.length > 1 && document.getElementById('showTrackingLines').value === 'true') {
+                    const line = L.polyline(linePoints, {
+                        color: deviceColor,
+                        weight: 3,
+                        opacity: 0.7
+                    }).addTo(trackingHistoryMap);
+                    
+                    // Add arrow markers to show direction
+                    for (let i = 1; i < linePoints.length; i += Math.max(1, Math.floor(linePoints.length / 10))) {
+                        const point = linePoints[i];
+                        const prevPoint = linePoints[i - 1];
+                        const angle = Math.atan2(point[0] - prevPoint[0], point[1] - prevPoint[1]) * 180 / Math.PI;
+                        
+                        const arrow = L.divIcon({
+                            html: `<div style="transform: rotate(${angle}deg); color: ${deviceColor}; font-size: 20px;">➤</div>`,
+                            className: 'tracking-arrow',
+                            iconSize: [20, 20]
+                        });
+                        
+                        L.marker(point, { icon: arrow }).addTo(trackingHistoryMap);
+                    }
+                    
+                    trackingHistoryLines.set(deviceId, line);
+                }
+                
+                // Create markers for start and end points
+                if (records.length > 0) {
+                    const firstRecord = records[0];
+                    const lastRecord = records[records.length - 1];
+                    
+                    if (firstRecord.latitude && firstRecord.longitude) {
+                        const startMarker = L.marker([firstRecord.latitude, firstRecord.longitude], {
+                            icon: L.divIcon({
+                                html: `<div style="background: ${deviceColor}; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px;">S</div>`,
+                                className: 'tracking-marker',
+                                iconSize: [20, 20]
+                            })
+                        }).addTo(trackingHistoryMap);
+                        
+                        startMarker.bindPopup(`
+                            <div style="min-width: 200px;">
+                                <h4>${deviceName} - Start</h4>
+                                <p><strong>Time:</strong> ${new Date(firstRecord.timestamp).toLocaleString()}</p>
+                                <p><strong>Location:</strong> ${firstRecord.latitude.toFixed(6)}, ${firstRecord.longitude.toFixed(6)}</p>
+                                ${firstRecord.speed ? `<p><strong>Speed:</strong> ${firstRecord.speed} km/h</p>` : ''}
+                            </div>
+                        `);
+                        
+                        trackingHistoryMarkers.set(`${deviceId}_start`, startMarker);
+                    }
+                    
+                    if (lastRecord.latitude && lastRecord.longitude && records.length > 1) {
+                        const endMarker = L.marker([lastRecord.latitude, lastRecord.longitude], {
+                            icon: L.divIcon({
+                                html: `<div style="background: ${deviceColor}; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px;">E</div>`,
+                                className: 'tracking-marker',
+                                iconSize: [20, 20]
+                            })
+                        }).addTo(trackingHistoryMap);
+                        
+                        endMarker.bindPopup(`
+                            <div style="min-width: 200px;">
+                                <h4>${deviceName} - End</h4>
+                                <p><strong>Time:</strong> ${new Date(lastRecord.timestamp).toLocaleString()}</p>
+                                <p><strong>Location:</strong> ${lastRecord.latitude.toFixed(6)}, ${lastRecord.longitude.toFixed(6)}</p>
+                                ${lastRecord.speed ? `<p><strong>Speed:</strong> ${lastRecord.speed} km/h</p>` : ''}
+                            </div>
+                        `);
+                        
+                        trackingHistoryMarkers.set(`${deviceId}_end`, endMarker);
+                    }
+                }
+            });
+            
+            // Fit map to show all data
+            if (trackingHistoryMarkers.size > 0 || trackingHistoryLines.size > 0) {
+                const bounds = L.latLngBounds([]);
+                trackingHistoryMarkers.forEach(marker => bounds.extend(marker.getLatLng()));
+                trackingHistoryLines.forEach(line => bounds.extend(line.getBounds()));
+                trackingHistoryMap.fitBounds(bounds);
+            }
+            
+            log('success', `Displayed ${data.length} tracking records on map`, 'historyLog');
+        }
+
+        function getDeviceColor(deviceId) {
+            const colors = ['#007bff', '#28a745', '#ffc107', '#dc3545', '#6f42c1', '#fd7e14', '#20c997', '#e83e8c'];
+            const index = deviceId.toString().split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) % colors.length;
+            return colors[index];
+        }
+
+        function toggleTrackingLines() {
+            const showLines = document.getElementById('showTrackingLines').value === 'true';
+            
+            trackingHistoryLines.forEach((line, deviceId) => {
+                if (showLines) {
+                    trackingHistoryMap.addLayer(line);
+                } else {
+                    trackingHistoryMap.removeLayer(line);
+                }
+            });
+            
+            log('info', `Tracking lines ${showLines ? 'shown' : 'hidden'}`, 'historyLog');
+        }
+
+        // Enhanced loadTrackingHistory function
+        async function loadTrackingHistory() {
+            try {
+                log('info', 'Loading tracking history...', 'historyLog');
+                const response = await fetch(`${config.apiUrl}/api/data`);
+                const data = await response.json();
+                const records = data.records || data || [];
+                
+                trackingHistoryData = records;
+                
+                // Populate device filter
+                const deviceFilter = document.getElementById('historyDeviceFilter');
+                const devices = [...new Set(data.map(record => record.deviceId || record.imei))];
+                
+                deviceFilter.innerHTML = '<option value="all">All Devices</option>';
+                devices.forEach(deviceId => {
+                    const deviceName = deviceConfigs[deviceId]?.name || deviceId;
+                    deviceFilter.innerHTML += `<option value="${deviceId}">${deviceName}</option>`;
+                });
+                
+                // Set default date range (last 7 days)
+                const now = new Date();
+                const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                
+                document.getElementById('historyStartDate').value = weekAgo.toISOString().slice(0, 16);
+                document.getElementById('historyEndDate').value = now.toISOString().slice(0, 16);
+                
+                // Initialize map and display data
+                initializeTrackingHistoryMap();
+                filterTrackingHistory();
+                
+                log('success', `Loaded ${data.length} tracking records`, 'historyLog');
+            } catch (error) {
+                log('error', `Error loading tracking history: ${error.message}`, 'historyLog');
+            }
+        }
+
+        // Enhanced updateHistoryStats function
+        function updateHistoryStats(data) {
+            const totalRecords = data.length;
+            const totalDevices = new Set(data.map(record => record.deviceId || record.imei)).size;
+            const avgSpeed = data.length > 0 ? 
+                (data.reduce((sum, record) => sum + (record.speed || 0), 0) / data.length).toFixed(1) : 0;
+            
+            const dates = data.map(record => new Date(record.timestamp));
+            const dateRange = dates.length > 0 ? 
+                `${new Date(Math.min(...dates)).toLocaleDateString()} - ${new Date(Math.max(...dates)).toLocaleDateString()}` : '-';
+            
+            document.getElementById('totalRecords').textContent = totalRecords;
+            document.getElementById('totalDevices').textContent = totalDevices;
+            document.getElementById('dateRange').textContent = dateRange;
+            document.getElementById('avgSpeed').textContent = avgSpeed;
+        }
+
+        // Enhanced updateHistoryTable function
+        function updateHistoryTable(data) {
+            const tableDiv = document.getElementById('trackingHistoryTable');
+            if (data.length === 0) {
+                tableDiv.innerHTML = '<div class="no-data">No tracking records found</div>';
+                return;
+            }
+            
+            const table = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Device</th>
+                            <th>Time</th>
+                            <th>Location</th>
+                            <th>Speed</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.slice(0, 20).map(record => {
+                            const deviceName = deviceConfigs[record.deviceId]?.name || record.deviceId || record.imei || 'Unknown';
+                            return `
+                                <tr>
+                                    <td>${deviceName}</td>
+                                    <td>${new Date(record.timestamp).toLocaleString()}</td>
+                                    <td>${record.latitude ? `${record.latitude.toFixed(6)}, ${record.longitude.toFixed(6)}` : 'N/A'}</td>
+                                    <td>${record.speed ? `${record.speed.toFixed(1)} km/h` : 'N/A'}</td>
+                                    <td>${record.status || 'Active'}</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+            tableDiv.innerHTML = table;
+        }
+
+        // SM EXPORT Functions
+        async function exportSMExport() {
+            try {
+                log('info', 'Exporting SM Export...', 'smExportLog');
+                
+                const startDate = document.getElementById('smExportStartDate').value;
+                const endDate = document.getElementById('smExportEndDate').value;
+                const deviceFilter = document.getElementById('smExportDeviceFilter').value;
+                const fileTemplate = document.getElementById('smExportFileTemplate').value;
+                
+                if (!startDate || !endDate) {
+                    log('error', 'Please select start and end dates', 'smExportLog');
+                    return;
+                }
+                
+                // Get all data first
+                const response = await fetch(`${config.apiUrl}/api/data`);
+                const data = await response.json();
+                const records = data.records || data || [];
+                
+                // Filter by date range using device datetime
+                const timezone = document.getElementById('smExportTimezone')?.value || 'UTC';
+                let filteredData = records.filter(record => {
+                    // Get device datetime from tags, fallback to record.datetime, then record.timestamp
+                    let deviceTimestamp = record.timestamp;
+                    if (record.tags && record.tags['0x20'] && record.tags['0x20'].value) {
+                        deviceTimestamp = record.tags['0x20'].value;
+                    } else if (record.datetime) {
+                        deviceTimestamp = record.datetime;
+                    }
+                    
+                    // Convert device datetime to specified timezone for comparison
+                    const deviceDate = convertToTimezone(new Date(deviceTimestamp), timezone);
+                    const start = new Date(startDate);
+                    const end = new Date(endDate);
+                    return deviceDate >= start && deviceDate <= end;
+                });
+                
+                // Filter by device if specified
+                if (deviceFilter !== 'all') {
+                    filteredData = filteredData.filter(record => record.deviceId === deviceFilter);
+                }
+                
+                if (filteredData.length === 0) {
+                    log('warning', 'No data found for the selected date range and device filter', 'smExportLog');
+                    return;
+                }
+                
+                // Transform data to SM Export format with proper tag extraction
+                const smExportData = filteredData.map(record => {
+                    // Extract values from tags if they exist
+                    let lat = record.latitude || '';
+                    let lon = record.longitude || '';
+                    let speed = record.speed || '';
+                    let altitude = record.height || '';
+                    let satellites = record.satellites || '';
+                    let userData0 = record.userData0 || '';
+                    let userData1 = record.userData1 || '';
+                    let userData2 = record.userData2 || '';
+                    let modbus0 = record.modbus0 || '';
+                    
+                    if (record.tags && typeof record.tags === 'object') {
+                        // Extract coordinates
+                        if (record.tags['0x30'] && record.tags['0x30'].value) {
+                            const coords = record.tags['0x30'].value;
+                            lat = coords.latitude || lat;
+                            lon = coords.longitude || lon;
+                            satellites = coords.satellites || satellites;
+                        }
+                        
+                        // Extract speed and direction
+                        if (record.tags['0x33'] && record.tags['0x33'].value) {
+                            const speedDir = record.tags['0x33'].value;
+                            speed = speedDir.speed || speed;
+                        }
+                        
+                        // Extract height/altitude
+                        if (record.tags['0x34']) {
+                            altitude = record.tags['0x34'].value || altitude;
+                        }
+                        
+                        // Extract user data
+                        if (record.tags['0xe2']) {
+                            userData0 = record.tags['0xe2'].value || userData0;
+                        }
+                        
+                        if (record.tags['0xe3']) {
+                            userData1 = record.tags['0xe3'].value || userData1;
+                        }
+                        
+                        if (record.tags['0xe4']) {
+                            userData2 = record.tags['0xe4'].value || userData2;
+                        }
+                        
+                        // Extract modbus data
+                        if (record.tags['0x0001']) {
+                            modbus0 = record.tags['0x0001'].value || modbus0;
+                        }
+                    }
+                    
+                    // Get device datetime from tags, fallback to record.datetime, then record.timestamp
+                    let deviceTimestamp = record.timestamp;
+                    if (record.tags && record.tags['0x20'] && record.tags['0x20'].value) {
+                        deviceTimestamp = record.tags['0x20'].value;
+                    } else if (record.datetime) {
+                        deviceTimestamp = record.datetime;
+                    }
+                    
+                    // Convert device datetime to specified timezone for export
+                    const convertedTimestamp = convertToTimezone(new Date(deviceTimestamp), timezone);
+                    
+                    return {
+                        IMEI: record.deviceId,
+                        Timestamp: convertedTimestamp.toISOString().replace('T', ' ').replace('Z', '').split('.')[0],
+                        Lat: lat,
+                        Lon: lon,
+                        Alt: altitude,
+                        Satellite: satellites,
+                        Speed: speed,
+                        'Sensor Kiri': userData0,
+                        'Sensor Kanan': userData1,
+                        'Sensor Serial ( Ultrasonic )': modbus0,
+                        'Uptime Seconds': userData2
+                    };
+                });
+                
+                // Filter out rows that only have IMEI and Timestamp (exclude incomplete records)
+                const completeData = smExportData.filter(record => {
+                    return record.Lat !== '' || record.Lon !== '' || record.Alt !== '' || 
+                           record.Satellite !== '' || record.Speed !== '' || 
+                           record['Sensor Kiri'] !== '' || record['Sensor Kanan'] !== '' || 
+                           record['Sensor Serial ( Ultrasonic )'] !== '' || record['Uptime Seconds'] !== '';
+                });
+                
+                if (completeData.length === 0) {
+                    log('warning', 'No complete data records found after filtering', 'smExportLog');
+                    return;
+                }
+                
+                // Generate filename
+                const date = new Date().toISOString().split('T')[0];
+                const filename = fileTemplate
+                    .replace('GroupName', deviceConfigs[filteredData[0]?.deviceId]?.group || 'Unknown')
+                    .replace('DeviceName', deviceConfigs[filteredData[0]?.deviceId]?.name || filteredData[0]?.deviceId || 'Unknown')
+                    .replace('YYYY-MM-DD', date);
+                
+                // Convert to CSV with semicolon delimiter for SM Export
+                const csv = convertSMExportToCSV(completeData);
+                downloadFile(csv, filename, 'text/csv');
+                
+                // Update preview
+                updateSMExportPreview(completeData);
+                
+                log('success', `SM Export completed: ${filename} with ${completeData.length} records`, 'smExportLog');
+            } catch (error) {
+                log('error', `Error exporting SM Export: ${error.message}`, 'smExportLog');
+            }
+        }
+
+        function convertSMExportToCSV(data) {
+            if (data.length === 0) return '';
+            
+            // Define headers in the specific order for SM Export
+            const headers = [
+                'IMEI', 'Timestamp', 'Lat', 'Lon', 'Alt', 'Satellite', 'Speed',
+                'Sensor Kiri', 'Sensor Kanan', 'Sensor Serial ( Ultrasonic )', 'Uptime Seconds'
+            ];
+            
+            // Create header row with semicolon delimiter
+            let csv = headers.join(';') + '\n';
+            
+            // Add data rows
+            data.forEach(record => {
+                const row = headers.map(header => {
+                    const value = record[header] || '';
+                    return value;
+                });
+                csv += row.join(';') + '\n';
+            });
+            
+            return csv;
+        }
+
+        function updateSMExportPreview(data) {
+            const container = document.getElementById('smExportPreview');
+            if (data.length === 0) {
+                container.innerHTML = '<div class="no-data">No data to preview</div>';
+                return;
+            }
+            
+            let html = '<table class="data-table"><thead><tr>';
+            Object.keys(data[0]).forEach(key => {
+                html += `<th>${key}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+            
+            data.slice(0, 10).forEach(record => {
+                html += '<tr>';
+                Object.values(record).forEach(value => {
+                    html += `<td>${value || ''}</td>`;
+                });
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            if (data.length > 10) {
+                html += `<div class="preview-note">Showing first 10 of ${data.length} records</div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        function setupSMAutoExport() {
+            const frequency = document.getElementById('smExportAutoExport').value;
+            if (frequency === 'disabled') {
+                localStorage.removeItem('smExportAutoConfig');
+                log('info', 'SM Export auto export disabled', 'smExportLog');
+                return;
+            }
+            
+            const config = {
+                frequency: frequency,
+                nextExport: calculateNextExport(frequency),
+                enabled: true
+            };
+            
+            localStorage.setItem('smExportAutoConfig', JSON.stringify(config));
+            startSMAutoExportTimer();
+            log('success', `SM Export auto export set to ${frequency}`, 'smExportLog');
+        }
+
+        function startSMAutoExportTimer() {
+            const config = JSON.parse(localStorage.getItem('smExportAutoConfig') || '{}');
+            if (!config.enabled) return;
+            
+            const now = Date.now();
+            if (now >= config.nextExport) {
+                // Time to export
+                exportSMExport();
+                
+                // Calculate next export time
+                config.nextExport = calculateNextExport(config.frequency);
+                localStorage.setItem('smExportAutoConfig', JSON.stringify(config));
+            }
+            
+            // Check again in 1 minute
+            setTimeout(startSMAutoExportTimer, 60000);
+        }
+
+        function loadSMExportHistory() {
+            const history = JSON.parse(localStorage.getItem('smExportHistory') || '[]');
+            const container = document.getElementById('smExportLog');
+            
+            if (history.length === 0) {
+                container.innerHTML = '<div class="log-entry info">No export history available</div>';
+                return;
+            }
+            
+            let html = '';
+            history.slice(-10).forEach(entry => {
+                html += `<div class="log-entry ${entry.type}">[${entry.timestamp}] ${entry.message}</div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        // Device Commands Functions
+        async function loadDeviceCommands() {
+            await loadConnectedDevices();
+            updateCommandStatus('Ready');
+        }
+
+        async function loadConnectedDevices() {
+            try {
+                log('info', 'Loading connected devices...', 'commandLog');
+                const response = await fetch('/api/connected-devices');
+                const data = await response.json();
+                
+                const container = document.getElementById('connectedDevicesList');
+                
+                if (data.devices.length === 0) {
+                    container.innerHTML = '<div class="no-data">No devices connected</div>';
+                    updateCommandStatus('No devices connected');
+                } else {
+                    let html = '';
+                    data.devices.forEach(device => {
+                        html += `
+                            <div class="device-card">
+                                <h4>📱 ${device.imei}</h4>
+                                <p><strong>Status:</strong> ${device.connected ? '🟢 Connected' : '🔴 Disconnected'}</p>
+                                <p><strong>Last Seen:</strong> ${new Date(device.lastSeen).toLocaleString()}</p>
+                                <button class="btn btn-sm btn-primary" onclick="selectDeviceForCommand('${device.imei}')">🎯 Select</button>
+                            </div>
+                        `;
+                    });
+                    container.innerHTML = html;
+                    updateCommandStatus(`${data.count} devices connected`);
+                }
+            } catch (error) {
+                log('error', `Error loading devices: ${error.message}`, 'commandLog');
+                updateCommandStatus('Error loading devices');
+            }
+        }
+
+        function selectDeviceForCommand(imei) {
+            document.getElementById('commandDeviceIMEI').value = imei;
+            document.getElementById('quickDeviceIMEI').value = imei;
+            log('info', `Selected device: ${imei}`, 'commandLog');
+        }
+
+        function updateCustomCommand() {
+            const commandSelect = document.getElementById('commandText');
+            const customGroup = document.getElementById('customCommandGroup');
+            
+            if (commandSelect.value === 'custom') {
+                customGroup.style.display = 'block';
+            } else {
+                customGroup.style.display = 'none';
+            }
+        }
+
+        async function sendDeviceCommand() {
+            const imei = document.getElementById('commandDeviceIMEI').value;
+            const deviceNumber = parseInt(document.getElementById('commandDeviceNumber').value) || 0;
+            const commandSelect = document.getElementById('commandText');
+            const customCommand = document.getElementById('customCommandText').value;
+            
+            if (!imei) {
+                log('error', 'Please enter device IMEI', 'commandLog');
+                return;
+            }
+
+            let commandText = commandSelect.value;
+            if (commandSelect.value === 'custom') {
+                if (!customCommand.trim()) {
+                    log('error', 'Please enter custom command text', 'commandLog');
+                    return;
+                }
+                commandText = customCommand.trim();
+            }
+
+            try {
+                log('info', `Sending command to ${imei}...`, 'commandLog');
+                updateCommandStatus('Sending command...');
+                
+                const response = await fetch('/api/command', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        deviceIMEI: imei,
+                        deviceNumber: deviceNumber,
+                        commandText: commandText
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    log('success', `Command sent successfully: ${result.message}`, 'commandLog');
+                    log('info', `Command: "${result.command}", Device: ${result.deviceNumber}`, 'commandLog');
+                    updateCommandStatus('Command sent successfully');
+                } else {
+                    log('error', `Command failed: ${result.error}`, 'commandLog');
+                    updateCommandStatus('Command failed');
+                }
+            } catch (error) {
+                log('error', `Error sending command: ${error.message}`, 'commandLog');
+                updateCommandStatus('Error sending command');
+            }
+        }
+
+        async function sendQuickCommand(command) {
+            const imei = document.getElementById('quickDeviceIMEI').value;
+            
+            if (!imei) {
+                log('error', 'Please enter device IMEI', 'commandLog');
+                return;
+            }
+
+            try {
+                log('info', `Sending ${command} command to ${imei}...`, 'commandLog');
+                updateCommandStatus(`Sending ${command}...`);
+                
+                let endpoint = '/api/command';
+                let body = {
+                    deviceIMEI: imei,
+                    deviceNumber: 0,
+                    commandText: command
+                };
+
+                // Use specific endpoints for common commands
+                if (command === 'status') {
+                    endpoint = '/api/command/status';
+                    body = { deviceIMEI: imei, deviceNumber: 0 };
+                } else if (command === 'reset') {
+                    endpoint = '/api/command/reset';
+                    body = { deviceIMEI: imei, deviceNumber: 0 };
+                } else if (command === 'emergency') {
+                    endpoint = '/api/command/emergency-stop';
+                    body = { deviceIMEI: imei, deviceNumber: 0 };
+                }
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    log('success', `${command} command sent: ${result.message}`, 'commandLog');
+                    updateCommandStatus(`${command} command sent`);
+                } else {
+                    log('error', `${command} command failed: ${result.error}`, 'commandLog');
+                    updateCommandStatus(`${command} command failed`);
+                }
+            } catch (error) {
+                log('error', `Error sending ${command} command: ${error.message}`, 'commandLog');
+                updateCommandStatus(`Error sending ${command}`);
+            }
+        }
+
+        async function setOutputs() {
+            const imei = document.getElementById('quickDeviceIMEI').value;
+            
+            if (!imei) {
+                log('error', 'Please enter device IMEI', 'commandLog');
+                return;
+            }
+
+            // Calculate output states from checkboxes
+            let outputStates = 0;
+            for (let i = 0; i < 4; i++) {
+                if (document.getElementById(`output${i}`).checked) {
+                    outputStates |= (1 << i);
+                }
+            }
+
+            try {
+                log('info', `Setting outputs for ${imei}...`, 'commandLog');
+                updateCommandStatus('Setting outputs...');
+                
+                const response = await fetch('/api/command/set-output', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        deviceIMEI: imei,
+                        deviceNumber: 0,
+                        outputStates: outputStates
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    log('success', `Outputs set successfully: ${result.message}`, 'commandLog');
+                    log('info', `Output States: 0x${outputStates.toString(16).padStart(2, '0')} (${outputStates})`, 'commandLog');
+                    updateCommandStatus('Outputs set successfully');
+                } else {
+                    log('error', `Failed to set outputs: ${result.error}`, 'commandLog');
+                    updateCommandStatus('Failed to set outputs');
+                }
+            } catch (error) {
+                log('error', `Error setting outputs: ${error.message}`, 'commandLog');
+                updateCommandStatus('Error setting outputs');
+            }
+        }
+
+        function updateCommandStatus(status) {
+            const statusDot = document.getElementById('commandStatusDot');
+            const statusText = document.getElementById('commandStatusText');
+            
+            statusText.textContent = status;
+            
+            if (status.includes('Error') || status.includes('failed')) {
+                statusDot.className = 'status-dot error';
+            } else if (status.includes('connected') || status.includes('Ready')) {
+                statusDot.className = 'status-dot connected';
+            } else {
+                statusDot.className = 'status-dot warning';
+            }
+        }
+
+        function clearCommandLog() {
+            const container = document.getElementById('commandLog');
+            container.innerHTML = '<div class="log-entry info">Command log cleared...</div>';
+        }
+    </script>
+</body>
+</html>
+

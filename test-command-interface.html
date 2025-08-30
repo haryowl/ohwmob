@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galileosky Command Tester</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .section h2 {
+            color: #555;
+            margin-top: 0;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button.danger {
+            background: #dc3545;
+        }
+        button.danger:hover {
+            background: #c82333;
+        }
+        .output {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .device-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .device-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background: #f9f9f9;
+        }
+        .device-card h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .output-controls {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .output-control {
+            text-align: center;
+        }
+        .output-control input[type="checkbox"] {
+            width: auto;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Galileosky Command Tester</h1>
+        
+        <!-- Connection Status -->
+        <div class="section">
+            <h2>📡 Connection Status</h2>
+            <div id="connectionStatus" class="status info">
+                Checking connection...
+            </div>
+            <button onclick="checkConnection()">🔄 Refresh Status</button>
+            <button onclick="loadConnectedDevices()">📱 Load Connected Devices</button>
+        </div>
+
+        <!-- Connected Devices -->
+        <div class="section">
+            <h2>📱 Connected Devices</h2>
+            <div id="connectedDevices" class="device-list">
+                <div class="status info">No devices connected</div>
+            </div>
+        </div>
+
+        <!-- Command Testing -->
+        <div class="section">
+            <h2>🎯 Command Testing</h2>
+            
+            <div class="form-group">
+                <label for="deviceIMEI">Device IMEI:</label>
+                <input type="text" id="deviceIMEI" placeholder="Enter device IMEI" value="861774058687730">
+            </div>
+
+            <div class="form-group">
+                <label for="commandText">Command Text:</label>
+                <select id="commandText">
+                    <option value="status">Status Request</option>
+                    <option value="reset">Reset Device</option>
+                    <option value="emergency">Emergency Stop</option>
+                    <option value="getconfig">Get Configuration</option>
+                    <option value="setoutput 15">Set Output (15)</option>
+                    <option value="custom">Custom Command</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="customCommand">Custom Command (if selected above):</label>
+                <input type="text" id="customCommand" placeholder="Enter custom command text">
+            </div>
+
+            <div class="form-group">
+                <label for="deviceNumber">Device Number:</label>
+                <input type="number" id="deviceNumber" value="0" min="0" max="65535">
+            </div>
+
+            <button onclick="sendCommand()">📤 Send Command</button>
+            <button onclick="clearOutput()">🗑️ Clear Output</button>
+        </div>
+
+        <!-- Quick Commands -->
+        <div class="section">
+            <h2>⚡ Quick Commands</h2>
+            
+            <div class="form-group">
+                <label for="quickDeviceIMEI">Device IMEI:</label>
+                <input type="text" id="quickDeviceIMEI" placeholder="Enter device IMEI" value="861774058687730">
+            </div>
+
+            <h3>Output Control</h3>
+            <div class="output-controls">
+                <div class="output-control">
+                    <input type="checkbox" id="output0"> <label for="output0">Output 0</label>
+                </div>
+                <div class="output-control">
+                    <input type="checkbox" id="output1"> <label for="output1">Output 1</label>
+                </div>
+                <div class="output-control">
+                    <input type="checkbox" id="output2"> <label for="output2">Output 2</label>
+                </div>
+                <div class="output-control">
+                    <input type="checkbox" id="output3"> <label for="output3">Output 3</label>
+                </div>
+            </div>
+            <button onclick="setOutputs()">🎛️ Set Outputs</button>
+            <button onclick="getStatus()">📊 Get Status</button>
+            <button onclick="emergencyStop()" class="danger">🛑 Emergency Stop</button>
+            <button onclick="resetDevice()" class="danger">🔄 Reset Device</button>
+        </div>
+
+        <!-- Output Log -->
+        <div class="section">
+            <h2>📋 Command Log</h2>
+            <div id="outputLog" class="output"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3001';
+        let connectedDevices = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            checkConnection();
+            loadConnectedDevices();
+        });
+
+        // Check server connection
+        async function checkConnection() {
+            const statusDiv = document.getElementById('connectionStatus');
+            try {
+                const response = await fetch(`${API_BASE}/api/network-info`);
+                if (response.ok) {
+                    const data = await response.json();
+                    statusDiv.className = 'status success';
+                    statusDiv.textContent = `✅ Connected to server at ${data.localIP}:${data.port}`;
+                } else {
+                    throw new Error('Server not responding');
+                }
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = `❌ Connection failed: ${error.message}`;
+            }
+        }
+
+        // Load connected devices
+        async function loadConnectedDevices() {
+            try {
+                const response = await fetch(`${API_BASE}/api/connected-devices`);
+                if (response.ok) {
+                    const data = await response.json();
+                    connectedDevices = data.devices;
+                    displayConnectedDevices();
+                    log(`📱 Loaded ${data.count} connected devices`);
+                } else {
+                    throw new Error('Failed to load devices');
+                }
+            } catch (error) {
+                log(`❌ Error loading devices: ${error.message}`);
+            }
+        }
+
+        // Display connected devices
+        function displayConnectedDevices() {
+            const container = document.getElementById('connectedDevices');
+            
+            if (connectedDevices.length === 0) {
+                container.innerHTML = '<div class="status info">No devices connected</div>';
+                return;
+            }
+
+            container.innerHTML = connectedDevices.map(device => `
+                <div class="device-card">
+                    <h3>📱 ${device.imei}</h3>
+                    <p><strong>Status:</strong> ${device.connected ? '🟢 Connected' : '🔴 Disconnected'}</p>
+                    <p><strong>Last Seen:</strong> ${new Date(device.lastSeen).toLocaleString()}</p>
+                    <button onclick="selectDevice('${device.imei}')">🎯 Select</button>
+                </div>
+            `).join('');
+        }
+
+        // Select device for commands
+        function selectDevice(imei) {
+            document.getElementById('deviceIMEI').value = imei;
+            document.getElementById('quickDeviceIMEI').value = imei;
+            log(`🎯 Selected device: ${imei}`);
+        }
+
+        // Send generic command
+        async function sendCommand() {
+            const imei = document.getElementById('deviceIMEI').value;
+            const commandTextSelect = document.getElementById('commandText').value;
+            const customCommand = document.getElementById('customCommand').value;
+            const deviceNumber = parseInt(document.getElementById('deviceNumber').value) || 0;
+            
+            if (!imei) {
+                log('❌ Please enter device IMEI');
+                return;
+            }
+
+            // Determine command text
+            let commandText = commandTextSelect;
+            if (commandTextSelect === 'custom') {
+                if (!customCommand.trim()) {
+                    log('❌ Please enter custom command text');
+                    return;
+                }
+                commandText = customCommand.trim();
+            }
+
+            try {
+                log(`📤 Sending command to ${imei}...`);
+                const response = await fetch(`${API_BASE}/api/command`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        deviceIMEI: imei,
+                        deviceNumber: deviceNumber,
+                        commandText: commandText
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ Command sent successfully: ${result.message}`);
+                    log(`   Command: "${result.command}"`);
+                    log(`   Device Number: ${result.deviceNumber}`);
+                    log(`   Timestamp: ${result.timestamp}`);
+                } else {
+                    log(`❌ Command failed: ${result.error}`);
+                }
+            } catch (error) {
+                log(`❌ Error sending command: ${error.message}`);
+            }
+        }
+
+        // Set outputs
+        async function setOutputs() {
+            const imei = document.getElementById('quickDeviceIMEI').value;
+            if (!imei) {
+                log('❌ Please enter device IMEI');
+                return;
+            }
+
+            // Calculate output states from checkboxes
+            let outputStates = 0;
+            for (let i = 0; i < 4; i++) {
+                if (document.getElementById(`output${i}`).checked) {
+                    outputStates |= (1 << i);
+                }
+            }
+
+            try {
+                log(`📤 Setting outputs for ${imei}...`);
+                const response = await fetch(`${API_BASE}/api/command/set-output`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        deviceIMEI: imei,
+                        deviceNumber: 0,
+                        outputStates: outputStates
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ Outputs set successfully: ${result.message}`);
+                    log(`   Output States: 0x${outputStates.toString(16).padStart(2, '0')} (${outputStates})`);
+                } else {
+                    log(`❌ Failed to set outputs: ${result.error}`);
+                }
+            } catch (error) {
+                log(`❌ Error setting outputs: ${error.message}`);
+            }
+        }
+
+        // Get device status
+        async function getStatus() {
+            const imei = document.getElementById('quickDeviceIMEI').value;
+            if (!imei) {
+                log('❌ Please enter device IMEI');
+                return;
+            }
+
+            try {
+                log(`📤 Requesting status from ${imei}...`);
+                const response = await fetch(`${API_BASE}/api/command/status`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        deviceIMEI: imei,
+                        deviceNumber: 0
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ Status request sent: ${result.message}`);
+                } else {
+                    log(`❌ Failed to get status: ${result.error}`);
+                }
+            } catch (error) {
+                log(`❌ Error getting status: ${error.message}`);
+            }
+        }
+
+        // Emergency stop
+        async function emergencyStop() {
+            const imei = document.getElementById('quickDeviceIMEI').value;
+            if (!imei) {
+                log('❌ Please enter device IMEI');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to send emergency stop to device ${imei}?`)) {
+                return;
+            }
+
+            try {
+                log(`🚨 Sending emergency stop to ${imei}...`);
+                const response = await fetch(`${API_BASE}/api/command/emergency-stop`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        deviceIMEI: imei,
+                        deviceNumber: 0
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ Emergency stop sent: ${result.message}`);
+                } else {
+                    log(`❌ Failed to send emergency stop: ${result.error}`);
+                }
+            } catch (error) {
+                log(`❌ Error sending emergency stop: ${error.message}`);
+            }
+        }
+
+        // Reset device
+        async function resetDevice() {
+            const imei = document.getElementById('quickDeviceIMEI').value;
+            if (!imei) {
+                log('❌ Please enter device IMEI');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to reset device ${imei}?`)) {
+                return;
+            }
+
+            try {
+                log(`🔄 Sending reset command to ${imei}...`);
+                const response = await fetch(`${API_BASE}/api/command/reset`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        deviceIMEI: imei,
+                        deviceNumber: 0
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ Reset command sent: ${result.message}`);
+                } else {
+                    log(`❌ Failed to send reset command: ${result.error}`);
+                }
+            } catch (error) {
+                log(`❌ Error sending reset command: ${error.message}`);
+            }
+        }
+
+        // Clear output log
+        function clearOutput() {
+            document.getElementById('outputLog').textContent = '';
+        }
+
+        // Log function
+        function log(message) {
+            const outputLog = document.getElementById('outputLog');
+            const timestamp = new Date().toLocaleTimeString();
+            outputLog.textContent += `[${timestamp}] ${message}\n`;
+            outputLog.scrollTop = outputLog.scrollHeight;
+        }
+    </script>
+</body>
+</html>
